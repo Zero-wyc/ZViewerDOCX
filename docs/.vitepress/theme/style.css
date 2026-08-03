@@ -1,0 +1,170 @@
+/* 导航栏 Logo 圆角 */
+.VPImage.logo {
+  border-radius: 8px;
+}
+
+/* ===== 背景图功能 ===== */
+
+/* 背景图层 - 固定定位，覆盖整个视口 */
+html[data-bg="true"] body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-image: url('/nacho.jpg');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 确保所有外层容器透明，不遮挡背景图 */
+html[data-bg="true"] body,
+html[data-bg="true"] #app,
+html[data-bg="true"] .VPApp {
+  background-color: transparent !important;
+}
+
+/* 提升 VitePress 内容层级，确保在背景图之上 */
+html[data-bg="true"] #app {
+  position: relative;
+  z-index: 1;
+}
+
+/* 浅色模式：背景图柔和显示 */
+html[data-bg="true"]:not(.dark) body::before {
+  opacity: 0.18;
+}
+
+/* 深色模式：背景图暗化处理 */
+html[data-bg="true"].dark body::before {
+  opacity: 0.12;
+  filter: brightness(0.75) saturate(0.85);
+}
+
+/* 导航栏 - 半透明毛玻璃 */
+html[data-bg="true"] .VPNavBar,
+html[data-bg="true"] .VPNavBar .content,
+html[data-bg="true"] .VPNavBar .background {
+  background-color: rgba(255, 255, 255, 0.64) !important;
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+html[data-bg="true"].dark .VPNavBar,
+html[data-bg="true"].dark .VPNavBar .content,
+html[data-bg="true"].dark .VPNavBar .background {
+  background-color: rgba(27, 27, 31, 0.64) !important;
+}
+
+/* 导航栏左侧区域（标题、菜单）强化模糊 */
+html[data-bg="true"] .VPNavBar .container {
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+/* 侧边栏 - 半透明毛玻璃 */
+html[data-bg="true"] .VPSidebar,
+html[data-bg="true"] .VPSidebar .curtain,
+html[data-bg="true"] .VPSidebar .VPSidebarTitle,
+html[data-bg="true"] .VPSidebar .title,
+html[data-bg="true"] .VPSidebar .nav,
+html[data-bg="true"] .VPSidebar .group,
+html[data-bg="true"] .VPSidebar .VPLink,
+html[data-bg="true"] .VPSidebar .link,
+html[data-bg="true"] .VPSidebar .item,
+html[data-bg="true"] .VPSidebar .VPSidebarItem {
+  background-color: transparent !important;
+}
+
+html[data-bg="true"] .VPSidebar,
+html[data-bg="true"] .VPSidebar .curtain {
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+/* 侧边栏内容区域保持半透明毛玻璃 */
+html[data-bg="true"] .VPSidebar {
+  background-color: rgba(246, 246, 247, 0.6) !important;
+}
+
+html[data-bg="true"].dark .VPSidebar {
+  background-color: rgba(22, 22, 24, 0.6) !important;
+}
+
+/* 侧边栏分组标题与链接保持可读性 */
+html[data-bg="true"] .VPSidebar .VPSidebarItem .text,
+html[data-bg="true"] .VPSidebar .VPSidebarItem .link {
+  background-color: transparent !important;
+}
+
+/* 当前激活的链接保持原有高亮 */
+html[data-bg="true"] .VPSidebar .VPSidebarItem.is-active .link {
+  background-color: var(--vp-c-brand-soft) !important;
+}
+
+/* 侧边栏滚动遮罩必须透明 */
+html[data-bg="true"] .VPSidebar .curtain {
+  background-image: none !important;
+}
+
+/* 内容区域透明 */
+html[data-bg="true"] .VPContent,
+html[data-bg="true"] .VPDoc,
+html[data-bg="true"] .VPHome,
+html[data-bg="true"] .VPFooter {
+  background-color: transparent !important;
+}
+
+/* 移动端导航 - 半透明毛玻璃 */
+html[data-bg="true"] .VPLocalNav {
+  background-color: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+}
+
+html[data-bg="true"].dark .VPLocalNav {
+  background-color: rgba(27, 27, 31, 0.72) !important;
+}
+
+/* 代码块保持不透明，确保可读性 */
+html[data-bg="true"] .VPDoc div[class*='language-'] {
+  background-color: var(--vp-code-block-bg) !important;
+}
+
+/* ===== 长按加载动画 ===== */
+.bg-press-loading {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.bg-press-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  filter: drop-shadow(0 0 2px var(--vp-c-brand-1));
+}
+
+.bg-press-track {
+  fill: none;
+  stroke: var(--vp-c-border);
+  stroke-width: 2;
+  opacity: 0.3;
+}
+
+.bg-press-progress {
+  fill: none;
+  stroke: var(--vp-c-brand-1);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.05s linear;
+}

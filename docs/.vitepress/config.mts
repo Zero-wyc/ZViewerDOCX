@@ -7,8 +7,28 @@ export default defineConfig({
   cleanUrls: true,
   lastUpdated: true,
 
+  head: [
+    // 网站图标（favicon）
+    ['link', { rel: 'icon', type: 'image/jpeg', href: '/favicon.jpg' }],
+    ['link', { rel: 'apple-touch-icon', href: '/favicon.jpg' }],
+    // 社交分享缩略图：部署后请将 href 改为站点绝对 URL，例如 https://你的域名/favicon.jpg
+    ['meta', { property: 'og:image', content: '/favicon.jpg' }],
+    ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+    // 背景图状态预加载（防止页面闪烁）
+    ['script', {}, `
+      (function() {
+        try {
+          if (localStorage.getItem('zviewer-bg-enabled') === 'true') {
+            document.documentElement.setAttribute('data-bg', 'true')
+          }
+        } catch(e) {}
+      })()
+    `],
+  ],
+
   themeConfig: {
     siteTitle: 'ZViewer 文档',
+    logo: '/favicon.jpg',
     search: {
       provider: 'local',
       options: {
