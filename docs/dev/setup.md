@@ -1,55 +1,98 @@
 # 本地开发
 
-项目使用 npm workspaces，根目录统一安装依赖。
+本文面向希望在本地搭建 ZViewer 开发环境的开发者。
+
+---
+
+## 环境要求
+
+| 工具 | 最低版本 | 说明 |
+|------|---------|------|
+| Node.js | 18.x | 推荐使用 20.x 或 22.x LTS |
+| npm | 9.x | 随 Node.js 一起安装 |
+| Git | — | 用于克隆项目代码 |
+
+## 第一步：克隆项目
 
 ```bash
-# 安装全部依赖
-npm install
-
-# 同时启动前后端开发服务
-npm run dev
-
-# 或分别启动
-npm run dev:backend
-npm run dev:frontend
+git clone https://github.com/Zero-wyc/ZViewer.git
+cd ZViewer
 ```
+
+## 第二步：安装依赖
+
+项目使用 npm workspaces，根目录统一安装所有依赖：
+
+```bash
+npm install
+```
+
+这会自动安装 `backend/` 和 `frontend/` 两个 workspace 的所有依赖。
+
+## 第三步：启动开发服务
+
+### 同时启动前后端（推荐）
+
+```bash
+npm run dev
+```
+
+这会用 `concurrently` 同时启动前端和后端开发服务器。
+
+### 分别启动
+
+```bash
+npm run dev:backend    # 后端 http://localhost:3333
+npm run dev:frontend   # 前端 http://localhost:5174
+```
+
+前端开发时默认通过 Vite 代理连接后端（`/api`、`/socket.io`、`/live` 请求自动转发到 `localhost:3333`），无需额外配置 `VITE_API_URL`。
 
 ## 开发端口
 
-| 服务 | 地址 |
-|---|---|
-| 前端 | `http://localhost:5174` |
-| 后端 | `http://localhost:3333` |
+| 服务 | 地址 | 说明 |
+|------|------|------|
+| 前端开发服务器 | `http://localhost:5174` | Vite 开发服务器，HMR 热更新 |
+| 后端开发服务器 | `http://localhost:3333` | Express + TypeScript，热重载 |
+| RTMP 推流 | 3334 | OBS 推流端口 |
+| HTTP-FLV 拉流 | 3335 | 直播流播放 |
 
-前端开发时默认通过 Vite 代理连接后端，无需额外配置 `VITE_API_URL`。
+## 常用脚本
 
-## 构建
+| 命令 | 说明 |
+|------|------|
+| `npm run dev` | 并行启动前后端开发服务 |
+| `npm run dev:backend` | 单独启动后端 |
+| `npm run dev:frontend` | 单独启动前端 |
+| `npm run build` | 构建前后端 |
+| `npm run build:all` | 全量单文件编译（生成 dist/ 可执行文件） |
+| `npm run lint` | 代码检查 |
+| `npm run start` | 跨平台启动（转发到 start-prod.* 脚本） |
 
-```bash
-npm run build          # 构建前后端
-npm run build:all      # 单文件编译（生成 dist/ 下的可执行文件）
-npm run lint           # 代码检查
+## 项目结构简览
+
+```
+ZViewer/
+├── backend/          # Express 后端（TypeScript + TypeORM + sql.js）
+├── frontend/         # React 前端（Vite + Tailwind CSS）
+├── frontend-server/  # 前端静态文件服务（零外部依赖）
+├── scripts/          # 工具脚本（证书/构建/启动）
+├── docker/           # Docker 入口
+├── packaging/        # 启动脚本模板
+└── dist/             # 构建产物
 ```
 
-## 常用脚本（package.json）
+## 数据库
+
+- **默认**：SQLite（`config/dev.sqlite`），sql.js wasm 实现
+- **可选**：PostgreSQL（需配置 `DATABASE_URL`）
+
+## 工具脚本
 
 | 脚本 | 说明 |
-|---|---|
-| `dev` | 并行启动前后端开发服务 |
-| `dev:backend` / `dev:frontend` | 单独启动后端 / 前端 |
-| `build` | 构建全部 workspace |
-| `build:exe` | 后端编译为单文件 exe |
-| `build:backend-exe` | 仅编译后端 exe |
-| `build:frontend-exe` | 仅打包前端静态服务 exe |
-| `build:all` | 全量单文件编译 |
-| `start` | 跨平台启动（转发到 `start-prod.*` 脚本） |
-
-## scripts/ 目录工具
-
-| 文件 | 用途 |
-|---|---|
-| `generate-cert.js` | SSL 证书生成（自签 / Let's Encrypt） |
-| `acme-client.js` | ACME v2 (RFC 8555) HTTP-01 客户端 |
-| `build-exe.js` | 后端单文件编译（@yao-pkg/pkg） |
-| `build-frontend-exe.js` | 前端静态服务打包为 exe |
-| `start.js` | 跨平台启动转发 |
+|------|------|
+| `scripts/generate-cert.js` | SSL 证书生成（自签 / Let's Encrypt） |
+| `scripts/acme-client.js` | ACME v2 HTTP-01 客户端 |
+| `scripts/build-exe.js` | 后端单文件编译 |
+| `scripts/build-frontend-exe.js` | 前端静态服务打包 |
+| `scripts/start.js` | 跨平台启动转发 |

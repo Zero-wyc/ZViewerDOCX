@@ -1,0 +1,2 @@
+[permissions]
+allow = ["Bash=$f = \"F:\\Code\\Zero-wyc.github.io\\pages\\posts\\centos-dns-config.md\"; Select-String -Path $f -Pattern '^(hide:)' | Select-Object -First 1 | ForEach-Object { \"hide-line: \" + $_.Line }; Select-String -Path $f -Pattern '^#{1,4} ' | Select-Object -First 8 | ForEach-Object { $_.Line }"]

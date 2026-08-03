@@ -30,6 +30,7 @@ export default defineConfig({
       { text: '指南', link: '/guide/getting-started', activeMatch: '/guide/' },
       { text: '功能', link: '/features/rooms', activeMatch: '/features/' },
       { text: '管理', link: '/admin/permissions', activeMatch: '/admin/' },
+      { text: 'CLI', link: '/cli/', activeMatch: '/cli/' },
       { text: '开发', link: '/dev/setup', activeMatch: '/dev/' },
       { text: 'GitHub', link: 'https://github.com/Zero-wyc/ZViewer' },
     ],
@@ -74,6 +75,15 @@ export default defineConfig({
             { text: '项目结构', link: '/dev/structure' },
             { text: '环境变量', link: '/dev/env' },
             { text: 'API 参考', link: '/dev/api' },
+          ],
+        },
+      ],
+      '/cli/': [
+        {
+          text: 'CLI 本地代理',
+          items: [
+            { text: '概述与快速开始', link: '/cli/' },
+            { text: '使用指南', link: '/cli/guide' },
           ],
         },
       ],

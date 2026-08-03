@@ -5,9 +5,9 @@
   "type": "module",
   "description": "ZViewer —— 多人同步观影、追番与远程共享平台 · 官方文档",
   "scripts": {
-    "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "dev": "vitepress dev docs",
+    "build": "vitepress build docs",
+    "preview": "vitepress preview docs"
   },
   "devDependencies": {
     "vitepress": "^1.6.3"
