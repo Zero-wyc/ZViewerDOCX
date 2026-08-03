@@ -6,6 +6,7 @@ export default defineConfig({
   lang: 'zh-CN',
   cleanUrls: true,
   lastUpdated: true,
+  outDir: '../dist',
 
   head: [
     // 网站图标（favicon）
