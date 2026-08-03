@@ -1,14 +1,15 @@
 {
-  "name": "ZViewerDOCX",
-  "type": "module",
-  "version": "0.0.0",
+  "name": "zviewer-docs",
+  "version": "1.0.0",
   "private": true,
+  "type": "module",
+  "description": "ZViewer —— 多人同步观影、追番与远程共享平台 · 官方文档",
   "scripts": {
-    "dev": "vitepress dev",
-    "build": "vitepress build",
-    "preview": "vitepress preview"
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
-  "dependencies": {
-    "vitepress": "2.0.0-alpha.19"
+  "devDependencies": {
+    "vitepress": "^1.6.3"
   }
 }
