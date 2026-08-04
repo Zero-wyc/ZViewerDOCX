@@ -36,34 +36,54 @@ html[data-bg="true"] #app {
 
 /* 浅色模式：背景图柔和显示 */
 html[data-bg="true"]:not(.dark) body::before {
-  opacity: 0.18;
+  opacity: 0.35;
 }
 
 /* 深色模式：背景图暗化处理 */
 html[data-bg="true"].dark body::before {
-  opacity: 0.12;
+  opacity: 0.25;
   filter: brightness(0.75) saturate(0.85);
 }
 
-/* 导航栏 - 半透明毛玻璃 */
-html[data-bg="true"] .VPNavBar,
-html[data-bg="true"] .VPNavBar .content,
+/* 导航栏 - 毛玻璃效果 */
+/* .background 是 VitePress 的背景层，设为透明避免颜色断层 */
 html[data-bg="true"] .VPNavBar .background {
-  background-color: rgba(255, 255, 255, 0.64) !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* .content 是导航栏内容容器，设为透明 */
+html[data-bg="true"] .VPNavBar .content,
+html[data-bg="true"] .VPNavBar .content-body {
+  background-color: transparent !important;
+}
+
+/* .divider 分隔线保持透明 */
+html[data-bg="true"] .VPNavBar .divider,
+html[data-bg="true"] .VPNavBar .divider-line {
+  background-color: transparent !important;
+}
+
+/* 在 .VPNavBar 上统一应用毛玻璃 */
+html[data-bg="true"] .VPNavBar {
+  background-color: rgba(255, 255, 255, 0.4) !important;
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
 }
 
-html[data-bg="true"].dark .VPNavBar,
-html[data-bg="true"].dark .VPNavBar .content,
-html[data-bg="true"].dark .VPNavBar .background {
-  background-color: rgba(27, 27, 31, 0.64) !important;
+html[data-bg="true"].dark .VPNavBar {
+  background-color: rgba(27, 27, 31, 0.4) !important;
 }
 
-/* 导航栏左侧区域（标题、菜单）强化模糊 */
-html[data-bg="true"] .VPNavBar .container {
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+/* 导航栏左侧区域（标题、菜单） */
+html[data-bg="true"] .VPNavBar .container,
+html[data-bg="true"] .VPNavBar .title {
+  background-color: transparent !important;
+}
+
+/* 导航栏顶部边框线 */
+html[data-bg="true"] .VPNavBar .curtain {
+  background-color: transparent !important;
 }
 
 /* 侧边栏 - 半透明毛玻璃 */
@@ -88,11 +108,11 @@ html[data-bg="true"] .VPSidebar .curtain {
 
 /* 侧边栏内容区域保持半透明毛玻璃 */
 html[data-bg="true"] .VPSidebar {
-  background-color: rgba(246, 246, 247, 0.6) !important;
+  background-color: rgba(246, 246, 247, 0.4) !important;
 }
 
 html[data-bg="true"].dark .VPSidebar {
-  background-color: rgba(22, 22, 24, 0.6) !important;
+  background-color: rgba(22, 22, 24, 0.4) !important;
 }
 
 /* 侧边栏分组标题与链接保持可读性 */
@@ -101,9 +121,31 @@ html[data-bg="true"] .VPSidebar .VPSidebarItem .link {
   background-color: transparent !important;
 }
 
-/* 当前激活的链接保持原有高亮 */
+/* 当前激活的链接：左侧圆点标记 */
 html[data-bg="true"] .VPSidebar .VPSidebarItem.is-active .link {
-  background-color: var(--vp-c-brand-soft) !important;
+  background-color: transparent !important;
+  color: var(--vp-c-brand-1) !important;
+  font-weight: 500;
+  position: relative;
+  padding-left: 18px;
+}
+
+html[data-bg="true"] .VPSidebar .VPSidebarItem.is-active .link::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--vp-c-brand-1);
+}
+
+/* 激活项的文本容器也透明 */
+html[data-bg="true"] .VPSidebar .VPSidebarItem.is-active .text {
+  background-color: transparent !important;
+  color: var(--vp-c-brand-1) !important;
 }
 
 /* 侧边栏滚动遮罩必须透明 */
@@ -133,6 +175,116 @@ html[data-bg="true"].dark .VPLocalNav {
 /* 代码块保持不透明，确保可读性 */
 html[data-bg="true"] .VPDoc div[class*='language-'] {
   background-color: var(--vp-code-block-bg) !important;
+}
+
+/* ===== 主页 Hero 区域按钮与卡片毛玻璃 ===== */
+
+/* Hero 按钮 - 使用双重选择器提高优先级以覆盖 scoped CSS */
+html[data-bg="true"] .VPHero .VPButton.VPButton,
+html[data-bg="true"] .VPHero .actions .VPButton {
+  background-color: rgba(255, 255, 255, 0.45) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+}
+
+html[data-bg="true"].dark .VPHero .VPButton.VPButton,
+html[data-bg="true"].dark .VPHero .actions .VPButton {
+  background-color: rgba(27, 27, 31, 0.45) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* brand 主按钮保留品牌色但带透明 */
+html[data-bg="true"] .VPHero .VPButton.brand {
+  background-color: rgba(66, 133, 244, 0.75) !important;
+  border-color: rgba(66, 133, 244, 0.5) !important;
+  color: #fff !important;
+}
+
+html[data-bg="true"].dark .VPHero .VPButton.brand {
+  background-color: rgba(66, 133, 244, 0.7) !important;
+}
+
+/* Hero 介绍卡片 - 使用双重选择器提高优先级 */
+html[data-bg="true"] .VPFeature.VPFeature,
+html[data-bg="true"] .VPFeatures .VPFeature,
+html[data-bg="true"] .VPHomeFeatures .VPFeature {
+  background-color: rgba(255, 255, 255, 0.45) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06) !important;
+}
+
+html[data-bg="true"].dark .VPFeature.VPFeature,
+html[data-bg="true"].dark .VPFeatures .VPFeature,
+html[data-bg="true"].dark .VPHomeFeatures .VPFeature {
+  background-color: rgba(27, 27, 31, 0.45) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18) !important;
+}
+
+/* 特性卡片内部保持透明 */
+html[data-bg="true"] .VPFeature .box,
+html[data-bg="true"] .VPFeature .title,
+html[data-bg="true"] .VPFeature .details {
+  background-color: transparent !important;
+}
+
+/* 特性卡片图标容器也半透明 */
+html[data-bg="true"] .VPFeature .icon {
+  background-color: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(8px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(180%) !important;
+}
+
+html[data-bg="true"].dark .VPFeature .icon {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ===== 移除右侧栏底部阴影遮罩 ===== */
+.aside-curtain {
+  display: none;
+}
+
+/* ===== 首次切换主题提示 Toast ===== */
+.zviewer-theme-hint {
+  position: fixed;
+  top: calc(var(--vp-nav-height) + 12px);
+  right: 16px;
+  background-color: rgba(255, 255, 255, 0.4);
+  color: var(--vp-c-text-1);
+  padding: 10px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  z-index: 9999;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(24px);
+  transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12),
+              inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+}
+
+.zviewer-theme-hint.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.dark .zviewer-theme-hint {
+  background-color: rgba(27, 27, 31, 0.4);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+              inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 /* ===== 长按加载动画 ===== */

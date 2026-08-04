@@ -16,10 +16,33 @@ let shouldBlockClick = false
 let loadingElement: HTMLElement | null = null
 let observer: MutationObserver | null = null
 let bindRetryTimer: ReturnType<typeof setTimeout> | null = null
+let hintShown = false
 
 function loadBgState() {
   const enabled = localStorage.getItem(STORAGE_KEY) === 'true'
   document.documentElement.setAttribute('data-bg', enabled ? 'true' : 'false')
+}
+
+function showHintOnce() {
+  if (hintShown) return
+  hintShown = true
+  showThemeHint()
+}
+
+function showThemeHint() {
+  const toast = document.createElement('div')
+  toast.className = 'zviewer-theme-hint'
+  toast.textContent = '长按 1.5s 有惊喜'
+  document.body.appendChild(toast)
+
+  requestAnimationFrame(() => {
+    toast.classList.add('visible')
+  })
+
+  setTimeout(() => {
+    toast.classList.remove('visible')
+    setTimeout(() => toast.remove(), 400)
+  }, 3000)
 }
 
 function toggleBg() {
@@ -141,6 +164,13 @@ function bindButton() {
 
   button.addEventListener('mousedown', startPress)
   button.addEventListener('touchstart', startPress, { passive: true })
+
+  // 监听正常的主题切换 click（长按会阻止此事件，不会触发提示）
+  button.addEventListener('click', () => {
+    if (!shouldBlockClick) {
+      showHintOnce()
+    }
+  }, true)
 
   // 在父容器上捕获阶段阻止 click，防止长按后误触发主题切换
   const container = document.querySelector('.VPNavBarAppearance')

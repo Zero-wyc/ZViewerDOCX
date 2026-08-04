@@ -25,7 +25,10 @@ features:
     details: 支持 Bilibili（DASH 合并、大会员清晰度）、MP4 直链、WebDAV、FTP、OpenList 等多种视频源。
   - icon: 💬
     title: 实时互动
-    details: 评论面板、弹幕系统（Bilibili / DandanPlay / 自定义轨道——支持弹幕轨道叠加，弹幕翻倍！）、观众申请控制、语音聊天。
+    details: 评论面板、观众申请控制、语音聊天。
+  - icon: 🗨️
+    title: 弹幕系统
+    details: 支持 Bilibili 弹幕、DandanPlay 弹幕，自定义弹幕轨道，支持轨道叠加与弹幕翻倍效果。
   - icon: 🖥️
     title: 屏幕共享与推流
     details: 基于 WebRTC 的屏幕共享，OBS RTMP 推流配合 Node Media Server 提供 HTTP-FLV 拉流。

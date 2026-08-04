@@ -19,10 +19,11 @@ export default defineConfig({
     ['script', {}, `
       (function() {
         try {
-          if (localStorage.getItem('zviewer-bg-enabled') === 'true') {
-            document.documentElement.setAttribute('data-bg', 'true')
-          }
-        } catch(e) {}
+          var enabled = localStorage.getItem('zviewer-bg-enabled') === 'true'
+          document.documentElement.setAttribute('data-bg', enabled ? 'true' : 'false')
+        } catch(e) {
+          document.documentElement.setAttribute('data-bg', 'false')
+        }
       })()
     `],
   ],
@@ -51,7 +52,7 @@ export default defineConfig({
       { text: '指南', link: '/guide/getting-started', activeMatch: '/guide/' },
       { text: '功能', link: '/features/rooms', activeMatch: '/features/' },
       { text: '管理', link: '/admin/permissions', activeMatch: '/admin/' },
-      { text: 'CLI', link: '/cli/', activeMatch: '/cli/' },
+      { text: '本地代理CLI', link: '/cli/', activeMatch: '/cli/' },
       { text: '开发', link: '/dev/setup', activeMatch: '/dev/' },
       { text: 'GitHub', link: 'https://github.com/Zero-wyc/ZViewer' },
     ],
@@ -74,6 +75,7 @@ export default defineConfig({
             { text: '一起看房间', link: '/features/rooms' },
             { text: '视频源', link: '/features/video-sources' },
             { text: '实时互动', link: '/features/interaction' },
+          { text: '弹幕系统', link: '/features/danmaku' },
             { text: '屏幕共享与推流', link: '/features/screenshare' },
             { text: '主题系统', link: '/features/themes' },
           ],
