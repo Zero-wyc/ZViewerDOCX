@@ -228,5 +228,22 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <Layout />
+  <Layout>
+    <template #layout-bottom>
+      <div class="zviewer-footer-extras">
+        <span id="busuanzi_container_site_pv" style="display:none;">
+          <span class="busuanzi-icon">👁️</span>
+          总访问量 <span id="busuanzi_value_site_pv"></span> 次
+        </span>
+        <span id="busuanzi_container_site_uv" style="display:none;">
+          · 访客数 <span id="busuanzi_value_site_uv"></span> 人
+        </span>
+        <span class="edgeone-divider">·</span>
+        <span class="powered-edgeone">
+          <span class="edgeone-dot"></span>
+          Powered by <strong>EDGEONE</strong>
+        </span>
+      </div>
+    </template>
+  </Layout>
 </template>

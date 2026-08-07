@@ -15,6 +15,8 @@ export default defineConfig({
     // 社交分享缩略图：部署后请将 href 改为站点绝对 URL，例如 https://你的域名/favicon.jpg
     ['meta', { property: 'og:image', content: '/favicon.jpg' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+    // 不蒜子访问统计
+    ['script', { src: 'https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js', async: true, defer: true }],
     // 背景图状态预加载（防止页面闪烁）
     ['script', {}, `
       (function() {

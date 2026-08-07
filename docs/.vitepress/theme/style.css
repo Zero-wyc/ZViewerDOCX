@@ -320,3 +320,40 @@ html[data-bg="true"].dark .VPFeature .icon {
   stroke-linecap: round;
   transition: stroke-dashoffset 0.05s linear;
 }
+
+/* ===== 底部统计与 EDGEONE ===== */
+.zviewer-footer-extras {
+  text-align: center;
+  padding: 8px 24px 20px;
+  font-size: 13px;
+  color: var(--vp-c-text-2);
+  line-height: 1.6;
+}
+
+.zviewer-footer-extras .busuanzi-icon {
+  margin-right: 2px;
+}
+
+.zviewer-footer-extras .edgeone-divider {
+  margin: 0 6px;
+  color: var(--vp-c-text-3);
+}
+
+.zviewer-footer-extras .powered-edgeone {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.zviewer-footer-extras .edgeone-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.zviewer-footer-extras strong {
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+}
