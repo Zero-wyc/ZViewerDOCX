@@ -126,7 +126,7 @@ export default defineConfig({
     returnToTopLabel: '返回顶部',
     lastUpdatedText: '最后更新于',
     footer: {
-      message: '本项目遵循 GPL-3.0 许可。',
+      message: '本项目遵循 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en" target="_blank" rel="noopener noreferrer">CC BY-NC-SA</a> 许可。',
       copyright: 'Copyright © Zero-wyc / ZViewer Contributors',
     },
   },

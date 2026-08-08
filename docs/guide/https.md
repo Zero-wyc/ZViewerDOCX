@@ -8,7 +8,7 @@
 |---|---|---|
 | `localhost` | 自签证书 | SAN 含 `localhost`、`127.0.0.1`、`::1`，10 年有效 |
 | 域名（如 `example.com`） | **Let's Encrypt 可信 CA 证书** | 通过内置 ACME 客户端自动申请，浏览器不报警告 |
-| 公网 IP（如 `1.2.3.4`） | 自签证书 | SAN 写入 IP 条目 |
+| 公网 IP（如 `1.2.3.4`） | **Let's Encrypt 可信 CA 证书** | 支持对公网 IP 签发 Let's Encrypt 可信证书 |
 
 > 证书签发为纯 Node 实现（无需 openssl），基于内置 ACME v2 (RFC 8555) HTTP-01 客户端，仅依赖 `node-forge`。
 
@@ -19,7 +19,7 @@
 start.bat cert example.com
 ./start.sh cert example.com
 
-# 公网 IP → 自签证书
+# 公网 IP → 自动申请 Let's Encrypt 可信证书（支持 IP）
 start.bat cert 1.2.3.4
 
 # 强制重新签发
