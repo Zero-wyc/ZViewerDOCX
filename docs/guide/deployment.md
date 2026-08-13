@@ -128,7 +128,190 @@ docker compose -f docker-compose.linux-single.yml up -d
 | Windows | `zviewer-windows-x64.zip` | 含 `zviewer-backend.exe`、`zviewer-frontend.exe`、`zviewer-cert.exe`、`start.bat` |
 | Docker | `zerowyc0721/zviewer:latest` | Linux 单文件版的 Docker 镜像，自动推送到 Docker Hub |
 
+## 内网穿透与虚拟局域网
+
+ZViewer 部署在内网服务器时，外网用户无法直接访问。以下介绍三种主流方案，可根据你的网络环境选择。
+
+### FRP（推荐）
+
+[FRP](https://github.com/fatedier/frp) 是一款高性能的反向代理应用，支持 TCP、UDP、HTTP、HTTPS 协议，适合将内网 ZViewer 服务暴露到公网 VPS。
+
+#### 架构
+
+```
+公网用户 → frps（公网 VPS，端口 3333/4173）→ frpc（内网服务器）→ ZViewer（127.0.0.1:3333/4173）
+```
+
+#### 服务端配置（公网 VPS）
+
+```ini
+# frps.toml
+bindPort = 7000                # frp 控制端口
+vhostHTTPPort = 80             # HTTP 端口（可选，用于 Let's Encrypt 验证）
+vhostHTTPSPort = 443           # HTTPS 端口（可选）
+```
+
+启动：
+
+```bash
+frps -c frps.toml
+```
+
+#### 客户端配置（内网 ZViewer 服务器）
+
+```ini
+# frpc.toml
+serverAddr = "你的公网VPS_IP"
+serverPort = 7000
+
+[[proxies]]
+name = "zviewer-backend"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 3333
+remotePort = 3333
+
+[[proxies]]
+name = "zviewer-frontend"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 4173
+remotePort = 4173
+
+[[proxies]]
+name = "zviewer-rtmp"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 3334
+remotePort = 3334
+
+[[proxies]]
+name = "zviewer-flv"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 3335
+remotePort = 3335
+```
+
+启动：
+
+```bash
+frpc -c frpc.toml
+```
+
+#### 访问
+
+配置完成后，外网用户通过 `http://公网VPS_IP:4173` 访问 ZViewer 前端前端自动连接 `公网VPS_IP:3333` 后端。
+
+> 公网 VPS 需开放对应端口（3333、4173、3334、3335）的防火墙/安全组规则。
+
+#### 配置 HTTPS（FRP 转发）
+
+如果公网 VPS 有域名，可配置 FRP 的 HTTPS 转发，或使用 Nginx 反代 FRP 端口后申请 Let's Encrypt 证书。
+
+---
+
+### 内网穿透（以樱花为例）
+
+[Sakura Frp](https://www.natfrp.com/) 是一个免费易用的内网穿透服务，无需自备公网 VPS，注册账号即可使用。
+
+#### 注册与安装
+
+1. 访问 [Sakura Frp 官网](https://www.natfrp.com/) 注册账号。
+2. 在「软件下载」页面下载对应系统的客户端。
+3. 登录后进入「管理面板」→「隧道」→「创建隧道」。
+
+![image-20260813153053987](https://github.cdn.zero251.xyz/Zero-wyc/Image/main/All/20260813153101214.webp)
+
+![image-20260813153136774](https://github.cdn.zero251.xyz/Zero-wyc/Image/main/All/20260813153136959.webp)
+
+在 ZViewer 的「自定义后端地址」中填入后端地址，即可在外网使用。
+
+### 其他的内网穿透同理
+
+> 免费版有流量限制（通常 1-2GB/月），适合轻度使用。付费版不限流量。
+
+---
+
+### 虚拟局域网（以Zerotier为例）
+
+[ZeroTier](https://www.zerotier.com/) 是一款软件定义网络（SDN）工具，将分布在不同网络的设备组成一个虚拟局域网，设备间可直接通信，无需公网 IP。
+
+#### 架构
+
+```
+外网用户（安装 ZeroTier）←→ ZeroTier 虚拟网络 ←→ 内网 ZViewer 服务器（安装 ZeroTier）
+```
+
+#### 注册与创建网络
+
+1. 访问 [ZeroTier Central](https://my.zerotier.com/) 注册账号。
+2. 点击 **Create A Network** 创建一个网络。
+3. 记下生成的 **Network ID**（如 `8056c2e21c000001`）。
+
+#### 安装 ZeroTier
+
+**Linux（内网服务器）**：
+
+```bash
+curl -s https://install.zerotier.com | sudo bash
+sudo zerotier-cli join <Network ID>
+sudo zerotier-cli set <Network ID> allowManaged=1
+```
+
+**Windows/macOS（外网用户）**：
+
+1. 从 [ZeroTier 官网](https://www.zerotier.com/download/) 下载客户端安装。
+2. 点击系统托盘图标 → **Join Network** → 输入 Network ID。
+3. 勾选 **Allow Managed IP**。
+
+#### 授权设备
+
+在 [ZeroTier Central](https://my.zerotier.com/) 的网络管理页面中，勾选已连接设备旁边的复选框以授权入网。
+
+#### 配置路由
+
+在 ZeroTier Central 网络设置的 **Routes** 中添加：
+
+| 目标网络 | 下一跳 | 说明 |
+|----------|--------|------|
+| `192.168.1.0/24`（内网网段） | `<内网服务器的ZeroTier IP>` | 允许外网用户访问内网其他设备 |
+
+#### 访问
+
+授权后，ZeroTier 会为每台设备分配一个虚拟 IP（如 `10.147.20.1`）。外网用户通过该 IP 访问内网 ZViewer 服务：
+
+```
+http://10.147.20.1:4173
+```
+
+> ZeroTier 的免费版支持最多 25 台设备，适合团队使用。设备间通信为 P2P 直连，不经过中心服务器，速度取决于两端带宽。
+
+---
+
+### 方案对比
+
+| 方案 | 是否需要公网 VPS | 速度 | 配置难度 | 适用场景 |
+|------|-----------------|------|---------|---------|
+| **FRP** | 是（需一台公网 VPS） | 受 VPS 带宽限制，中转流量 | 中等 | 有公网 VPS 且需要稳定服务的场景 |
+| **Sakura Frp** | 否（使用服务商节点） | 受免费节点带宽限制 | 简单 | 快速测试、临时分享、无公网 VPS 的场景 |
+| **ZeroTier** | 否（P2P 直连） | 取决于两端带宽，直连最快 | 简单 | 多设备组网、长期使用、需要高速传输的场景 |
+
+#### 选择建议
+
+- **已有公网 VPS** → 使用 FRP，稳定可控。
+- **无公网 VPS，偶尔外网访问** → 使用 Sakura Frp，免费快速。
+- **需要长期稳定高速访问，且设备较多** → 使用 ZeroTier，P2P 直连不限速。
+
 ## 更新机制
+
+系统支持从 GitHub Releases 自动检测并应用更新，也支持手动上传压缩包更新（zip / tar.gz，≤500MB）。管理员可在管理后台「版本更新」Tab 中操作，并控制是否接收预发布版（main 分支自动构建）的更新。
+
+相关 API：
+
+- `GET /api/system/update/check`：检查更新（可含预发布）
+- `POST /api/system/update/apply`：下载并应用更新
+- `POST /api/system/update/upload`：上传压缩包并应用
 
 系统支持从 GitHub Releases 自动检测并应用更新，也支持手动上传压缩包更新（zip / tar.gz，≤500MB）。管理员可在管理后台「版本更新」Tab 中操作，并控制是否接收预发布版（main 分支自动构建）的更新。
 
