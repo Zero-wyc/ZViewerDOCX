@@ -92,32 +92,6 @@ docker compose -f docker-compose.linux-single.yml up -d
 | `/app/config/uploads/` | 用户上传文件 |
 | `/app/config/media/` | NMS 推流媒体切片 |
 
-## GitHub Actions 自动构建
-
-每次 push 到 `main` 分支或打 tag（`v*`）时，自动完成：
-
-1. **构建 Linux 单文件版** → 上传 artifact + 推送到 Docker Hub（`zerowyc0721/zviewer`）。
-2. **构建 Windows 单文件版** → 上传 artifact。
-3. 打 tag 时自动创建 GitHub Release，包含两个平台的压缩包。
-
-### 版本管理
-
-| 触发方式 | 版本号 | 示例 |
-|---|---|---|
-| 推送 tag `v1.0.0` | 正式版 | `1.0.0` |
-| 推送 `main` 分支 | 开发版（预发布） | `0.0.0-dev.a1b2c3d` |
-| 手动触发 | 手动构建 | `0.0.0-manual` |
-
-管理员可在管理后台通过开关控制是否接收预发布版本更新。
-
-### 构建产物
-
-| 平台 | 压缩包 | 说明 |
-|---|---|---|
-| Linux | `zviewer-linux-x64.tar.gz` | 含 `zviewer-backend`、`zviewer-cert`、`start.sh` |
-| Windows | `zviewer-windows-x64.zip` | 含 `zviewer-backend.exe`、`zviewer-cert.exe`、`start.bat` |
-| Docker | `zerowyc0721/zviewer:latest` | Linux 单文件版的 Docker 镜像，自动推送到 Docker Hub |
-
 ## 内网穿透与虚拟局域网
 
 ZViewer 部署在内网服务器时，外网用户无法直接访问。以下介绍三种主流方案，可根据你的网络环境选择。
