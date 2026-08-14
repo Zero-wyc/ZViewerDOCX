@@ -92,32 +92,6 @@ Mount a volume to the `/app/config` directory, which contains:
 | `/app/config/uploads/` | User-uploaded files |
 | `/app/config/media/` | NMS streaming media segments |
 
-## GitHub Actions Auto-build
-
-On every push to the `main` branch or tag push (`v*`), the following happens automatically:
-
-1. **Build Linux single-file version** -- upload artifact + push to Docker Hub (`zerowyc0721/zviewer`).
-2. **Build Windows single-file version** -- upload artifact.
-3. On tag push, automatically create a GitHub Release with archives for both platforms.
-
-### Version Management
-
-| Trigger | Version | Example |
-|---|---|---|
-| Push tag `v1.0.0` | Release | `1.0.0` |
-| Push `main` branch | Development (pre-release) | `0.0.0-dev.a1b2c3d` |
-| Manual trigger | Manual build | `0.0.0-manual` |
-
-Admins can toggle whether to accept pre-release version updates in the admin panel.
-
-### Build Artifacts
-
-| Platform | Archive | Description |
-|---|---|---|
-| Linux | `zviewer-linux-x64.tar.gz` | Contains `zviewer-backend`, `zviewer-cert`, `start.sh` |
-| Windows | `zviewer-windows-x64.zip` | Contains `zviewer-backend.exe`, `zviewer-cert.exe`, `start.bat` |
-| Docker | `zerowyc0721/zviewer:latest` | Docker image of the Linux single-file version, auto-pushed to Docker Hub |
-
 ## Intranet Penetration and Virtual LAN
 
 When ZViewer is deployed on an intranet server, external users cannot access it directly. The following three mainstream solutions are described below; choose based on your network environment.
