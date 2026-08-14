@@ -1,21 +1,15 @@
 import { defineConfig } from 'vitepress'
 
-export default defineConfig({
-  title: 'ZViewer 文档',
-  description: '多人同步观影、追番与远程共享平台',
-  lang: 'zh-CN',
+const shared = {
   cleanUrls: true,
   lastUpdated: true,
   outDir: '../dist',
 
   head: [
-    // 网站图标（favicon）
     ['link', { rel: 'icon', type: 'image/jpeg', href: '/favicon.jpg' }],
     ['link', { rel: 'apple-touch-icon', href: '/favicon.jpg' }],
-    // 社交分享缩略图：部署后请将 href 改为站点绝对 URL，例如 https://你的域名/favicon.jpg
     ['meta', { property: 'og:image', content: '/favicon.jpg' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
-    // 不蒜子访问统计
     ['script', { src: 'https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js', async: true, defer: true }],
     // 背景图状态预加载（防止页面闪烁）
     ['script', {}, `
@@ -28,7 +22,29 @@ export default defineConfig({
         }
       })()
     `],
+    // 自动语言检测：首次访问根路径时根据浏览器语言重定向到 /en/
+    ['script', {}, `
+      (function() {
+        var lang = navigator.language || navigator.userLanguage || ''
+        var path = window.location.pathname
+        // 仅在根路径或首页时检测，排除已带语言前缀的路径
+        if (path === '/' || path === '' || path === '/index.html') {
+          var redirected = sessionStorage.getItem('zviewer-lang-redirected')
+          if (!redirected && lang && !lang.startsWith('zh')) {
+            sessionStorage.setItem('zviewer-lang-redirected', 'true')
+            window.location.replace('/en/')
+          }
+        }
+      })()
+    `],
   ],
+}
+
+const zh = {
+  ...shared,
+  lang: 'zh-CN',
+  title: 'ZViewer 文档',
+  description: '多人同步观影、追番与远程共享平台',
 
   themeConfig: {
     siteTitle: 'ZViewer 文档',
@@ -56,6 +72,7 @@ export default defineConfig({
       { text: '管理', link: '/admin/permissions', activeMatch: '/admin/' },
       { text: '本地代理CLI', link: '/cli/', activeMatch: '/cli/' },
       { text: '开发', link: '/dev/setup', activeMatch: '/dev/' },
+      { text: 'English', link: '/en/' },
       { text: 'GitHub', link: 'https://github.com/Zero-wyc/ZViewer' },
     ],
     sidebar: {
@@ -77,9 +94,8 @@ export default defineConfig({
             { text: '一起看房间', link: '/features/rooms' },
             { text: '视频源', link: '/features/video-sources' },
             { text: '实时互动', link: '/features/interaction' },
-          { text: '弹幕系统', link: '/features/danmaku' },
+            { text: '弹幕系统', link: '/features/danmaku' },
             { text: '屏幕共享与推流', link: '/features/screenshare' },
-            { text: '主题系统', link: '/features/themes' },
           ],
         },
       ],
@@ -128,6 +144,127 @@ export default defineConfig({
     footer: {
       message: '本项目遵循 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en" target="_blank" rel="noopener noreferrer">CC BY-NC-SA</a> 许可。',
       copyright: 'Copyright © Zero-wyc / ZViewer Contributors',
+    },
+  },
+}
+
+const en = {
+  ...shared,
+  lang: 'en-US',
+  title: 'ZViewer Documentation',
+  description: 'Multi-user synchronized video watching, anime tracking & remote sharing platform',
+
+  themeConfig: {
+    siteTitle: 'ZViewer Docs',
+    logo: '/favicon.jpg',
+    search: {
+      provider: 'local',
+      options: {
+        translations: {
+          button: { buttonText: 'Search', buttonAriaLabel: 'Search documentation' },
+          modal: {
+            noResultsText: 'No results found',
+            resetButtonTitle: 'Clear search',
+            footer: {
+              selectText: 'Select',
+              navigateText: 'Navigate',
+              closeText: 'Close',
+            },
+          },
+        },
+      },
+    },
+    nav: [
+      { text: 'Guide', link: '/en/guide/getting-started', activeMatch: '/en/guide/' },
+      { text: 'Features', link: '/en/features/rooms', activeMatch: '/en/features/' },
+      { text: 'Admin', link: '/en/admin/permissions', activeMatch: '/en/admin/' },
+      { text: 'CLI Agent', link: '/en/cli/', activeMatch: '/en/cli/' },
+      { text: 'Development', link: '/en/dev/setup', activeMatch: '/en/dev/' },
+      { text: '中文', link: '/' },
+      { text: 'GitHub', link: 'https://github.com/Zero-wyc/ZViewer' },
+    ],
+    sidebar: {
+      '/en/guide/': [
+        {
+          text: 'Guide',
+          items: [
+            { text: 'Getting Started', link: '/en/guide/getting-started' },
+            { text: 'Deployment', link: '/en/guide/deployment' },
+            { text: 'HTTPS & Certificates', link: '/en/guide/https' },
+            { text: 'FAQ', link: '/en/guide/faq' },
+          ],
+        },
+      ],
+      '/en/features/': [
+        {
+          text: 'Features',
+          items: [
+            { text: 'Watch Rooms', link: '/en/features/rooms' },
+            { text: 'Video Sources', link: '/en/features/video-sources' },
+            { text: 'Real-time Interaction', link: '/en/features/interaction' },
+            { text: 'Danmaku System', link: '/en/features/danmaku' },
+            { text: 'Screen Share & Streaming', link: '/en/features/screenshare' },
+          ],
+        },
+      ],
+      '/en/admin/': [
+        {
+          text: 'Administration',
+          items: [
+            { text: 'Permission Model', link: '/en/admin/permissions' },
+            { text: 'Admin Panel', link: '/en/admin/admin-panel' },
+          ],
+        },
+      ],
+      '/en/dev/': [
+        {
+          text: 'Development',
+          items: [
+            { text: 'Local Setup', link: '/en/dev/setup' },
+            { text: 'Project Structure', link: '/en/dev/structure' },
+            { text: 'Environment Variables', link: '/en/dev/env' },
+            { text: 'API Reference', link: '/en/dev/api' },
+          ],
+        },
+      ],
+      '/en/cli/': [
+        {
+          text: 'CLI Agent',
+          items: [
+            { text: 'Overview & Quick Start', link: '/en/cli/' },
+            { text: 'Usage Guide', link: '/en/cli/guide' },
+          ],
+        },
+      ],
+    },
+    outline: {
+      level: [2, 3],
+      label: 'On this page',
+    },
+    docFooter: {
+      prev: 'Previous',
+      next: 'Next',
+    },
+    darkModeSwitchLabel: 'Appearance',
+    sidebarMenuLabel: 'Menu',
+    returnToTopLabel: 'Return to top',
+    lastUpdatedText: 'Last updated',
+    footer: {
+      message: 'This project is licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en" target="_blank" rel="noopener noreferrer">CC BY-NC-SA</a>.',
+      copyright: 'Copyright © Zero-wyc / ZViewer Contributors',
+    },
+  },
+}
+
+export default defineConfig({
+  locales: {
+    root: {
+      ...zh,
+      label: '中文',
+    },
+    en: {
+      ...en,
+      label: 'English',
     },
   },
 })

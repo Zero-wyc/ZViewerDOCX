@@ -34,7 +34,7 @@ ZViewer 提供源码版、单文件 exe、Docker 三种部署形态，且内置�
 | `https [host]` | 签发证书后以 HTTPS 启动（仅后端，后端统一提供前端页面） |
 | `stop` / `restart` | 停止 / 重启服务 |
 | `status` | 查看运行状态（PID、端口监听、证书状态） |
-| `logs [backend|frontend]` | 查看日志（默认 backend） |
+| `logs [backend\|frontend]` | 查看日志（默认 backend） |
 | `build` | 构建前后端（源码版） |
 | `help` / `menu` | 帮助 / 交互菜单 |
 
@@ -169,9 +169,62 @@ remotePort = 3334
 
 > 公网 VPS 需开放对应端口（3333、3334）的防火墙/安全组规则。
 
+#### 配置 HTTPS（FRP 转发）
+
+如果公网 VPS 有域名，可配置 FRP 的 HTTPS 转发，或使用 Nginx 反代 FRP 端口后申请 Let's Encrypt 证书。
+
+---
+
 ### 内网穿透（以樱花为例）
 
-### 虚拟局域网（以Zerotier为例）
+[Sakura Frp](https://www.natfrp.com/) 是一个免费易用的内网穿透服务，无需自备公网 VPS，注册账号即可使用。
+
+#### 注册与安装
+
+1. 访问 [Sakura Frp 官网](https://www.natfrp.com/) 注册账号。
+2. 在「软件下载」页面下载对应系统的客户端。
+3. 登录后进入「管理面板」→「隧道」→「创建隧道」，配置本地端口为 `3333`。
+4. 在 ZViewer 的「自定义后端地址」中填入樱花分配的隧道地址，即可在外网使用。
+
+> 免费版有流量限制（通常 1-2GB/月），适合轻度使用。付费版不限流量。
+
+---
+
+### 虚拟局域网（以 ZeroTier 为例）
+
+[ZeroTier](https://www.zerotier.com/) 是一款软件定义网络（SDN）工具，将分布在不同网络的设备组成一个虚拟局域网，设备间可直接通信，无需公网 IP。
+
+#### 架构
+
+```
+外网用户（安装 ZeroTier）←→ ZeroTier 虚拟网络 ←→ 内网 ZViewer 服务器（安装 ZeroTier）
+```
+
+#### 注册与创建网络
+
+1. 访问 [ZeroTier Central](https://my.zerotier.com/) 注册账号。
+2. 点击 **Create A Network** 创建一个网络。
+3. 记下生成的 **Network ID**（如 `8056c2e21c000001`）。
+
+#### 安装 ZeroTier
+
+**Linux（内网服务器）**：
+
+```bash
+curl -s https://install.zerotier.com | sudo bash
+sudo zerotier-cli join <Network ID>
+sudo zerotier-cli set <Network ID> allowManaged=1
+```
+
+**Windows/macOS（外网用户）**：
+
+1. 从 [ZeroTier 官网](https://www.zerotier.com/download/) 下载客户端安装。
+2. 点击系统托盘图标 → **Join Network** → 输入 Network ID。
+3. 勾选 **Allow Managed IP**。
+
+#### 授权设备
+
+在 [ZeroTier Central](https://my.zerotier.com/) 的网络管理页面中，勾选已连接设备旁边的复选框以授权入网。
 
 #### 访问
 
@@ -181,6 +234,30 @@ remotePort = 3334
 http://10.147.20.1:3333
 ```
 
+> ZeroTier 的免费版支持最多 25 台设备，适合团队使用。设备间通信为 P2P 直连，不经过中心服务器，速度取决于两端带宽。
+
+---
+
+### 方案对比
+
+| 方案 | 是否需要公网 VPS | 速度 | 配置难度 | 适用场景 |
+|------|-----------------|------|---------|---------|
+| **FRP** | 是（需一台公网 VPS） | 受 VPS 带宽限制，中转流量 | 中等 | 有公网 VPS 且需要稳定服务的场景 |
+| **Sakura Frp** | 否（使用服务商节点） | 受免费节点带宽限制 | 简单 | 快速测试、临时分享、无公网 VPS 的场景 |
+| **ZeroTier** | 否（P2P 直连） | 取决于两端带宽，直连最快 | 简单 | 多设备组网、长期使用、需要高速传输的场景 |
+
+#### 选择建议
+
+- **已有公网 VPS** → 使用 FRP，稳定可控。
+- **无公网 VPS，偶尔外网访问** → 使用 Sakura Frp，免费快速。
+- **需要长期稳定高速访问，且设备较多** → 使用 ZeroTier，P2P 直连不限速。
+
 ## 更新机制
 
-系统支持从 GitHub Releases 自动检测并应用更新，也支持手动上传压缩包更新。管理员可在管理后台控制是否接收预发布版更新。
+系统支持从 GitHub Releases 自动检测并应用更新，也支持手动上传压缩包更新（zip / tar.gz，≤500MB）。管理员可在管理后台「版本更新」Tab 中操作，并控制是否接收预发布版（main 分支自动构建）的更新。
+
+相关 API：
+
+- `GET /api/system/update/check`：检查更新（可含预发布）
+- `POST /api/system/update/apply`：下载并应用更新
+- `POST /api/system/update/upload`：上传压缩包并应用
