@@ -74,7 +74,6 @@ export default defineConfig({
           { text: '管理', link: '/admin/permissions', activeMatch: '/admin/' },
           { text: '本地代理CLI', link: '/cli/', activeMatch: '/cli/' },
           { text: '开发', link: '/dev/setup', activeMatch: '/dev/' },
-          { text: 'English', link: '/en/' },
           { text: 'GitHub', link: 'https://github.com/Zero-wyc/ZViewer' },
         ],
         sidebar: {
@@ -182,7 +181,6 @@ export default defineConfig({
           { text: 'Admin', link: '/en/admin/permissions', activeMatch: '/en/admin/' },
           { text: 'CLI Agent', link: '/en/cli/', activeMatch: '/en/cli/' },
           { text: 'Development', link: '/en/dev/setup', activeMatch: '/en/dev/' },
-          { text: '中文', link: '/' },
           { text: 'GitHub', link: 'https://github.com/Zero-wyc/ZViewer' },
         ],
         sidebar: {
