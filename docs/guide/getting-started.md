@@ -251,5 +251,5 @@ HTTP 模式下，用户通过 `http://localhost:3333` 访问所有功能。
 
 - 了解[房间的详细设置](/features/rooms)——密码、观众权限、审批等
 - 探索[更多视频源](/features/video-sources)——Bilibili 大会员、WebDAV、FTP 等
-- 配置 [HTTPS 与证书](/guide/https)——让浏览器不再提示"不安全"
+- 配置 [HTTPS 与证书](/dev/https)——让浏览器不再提示"不安全"
 - 阅读[管理后台文档](/admin/admin-panel)——用户管理、房间管理、系统设置

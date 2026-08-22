@@ -82,8 +82,8 @@ export default defineConfig({
               text: '指南',
               items: [
                 { text: '快速开始', link: '/guide/getting-started' },
+                { text: '网络连接与内网穿透', link: '/guide/network' },
                 { text: '部署方式', link: '/guide/deployment' },
-                { text: 'HTTPS 与证书', link: '/guide/https' },
                 { text: '常见问题', link: '/guide/faq' },
               ],
             },
@@ -94,6 +94,7 @@ export default defineConfig({
               items: [
                 { text: '一起看房间', link: '/features/rooms' },
                 { text: '视频源', link: '/features/video-sources' },
+                { text: '字幕', link: '/features/subtitles' },
                 { text: '实时互动', link: '/features/interaction' },
                 { text: '弹幕系统', link: '/features/danmaku' },
                 { text: '屏幕共享与推流', link: '/features/screenshare' },
@@ -116,6 +117,7 @@ export default defineConfig({
                 { text: '本地开发', link: '/dev/setup' },
                 { text: '项目结构', link: '/dev/structure' },
                 { text: '环境变量', link: '/dev/env' },
+                { text: 'HTTPS 与证书', link: '/dev/https' },
                 { text: 'API 参考', link: '/dev/api' },
               ],
             },
