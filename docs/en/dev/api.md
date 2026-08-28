@@ -102,9 +102,7 @@ Three groups with identical structure:
 | DELETE | `/file` | Delete file/folder |
 | GET | `/resolve` | Resolve playback URL |
 | GET | `/proxy` | Proxy playback |
-| GET | `/ffmpeg-status` | ffmpeg status |
-| POST | `/ffmpeg-install` | Install ffmpeg |
-| POST | `/bilibili-download` | Bilibili download |
+| POST | `/bilibili-download` | Bilibili download (MP4 only, up to 720P) |
 
 ## Admin Panel `/api/admin`
 

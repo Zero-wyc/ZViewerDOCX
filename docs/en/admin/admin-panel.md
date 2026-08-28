@@ -120,6 +120,11 @@ You can enable or disable the following experimental features:
 
 Enabling beta features may affect system stability; use them as needed.
 
+### FFmpeg Engine (Audio Transcode)
+
+- **Allow browser-side audio transcode (ffmpeg.wasm)**: Global permission toggle, **off by default**. When enabled, it merely **permits** the host to check "Enable FFmpeg WASM engine" when adding a movie. Only when both are enabled will movies with browser-incompatible audio tracks (DTS / AC3 / EAC3, etc.) be transcoded to AAC in real time in the browser via ffmpeg.wasm (about 30MB core is loaded on first use). Enabling this toggle alone does not auto-transcode any movie; when off, all movies are pushed directly and incompatible tracks may be silent.
+- **wasm engine download source**: Where the ffmpeg.wasm core is downloaded from (author direct link / server relay / custom link).
+
 ### Kazumi Rule Source Configuration
 
 If you use the Kazumi data source, you can configure the rule source URL here. Modifying this will clear the anime source cache and re-fetch data.

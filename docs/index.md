@@ -22,7 +22,7 @@ features:
     details: 创建或加入房间，房主控制播放、暂停、跳转、倍速，观众实时跟随；房主断线由服务器接力广播，播放不中断。
   - icon: 🔗
     title: 多源视频解析
-    details: 支持 Bilibili（DASH 合并、大会员清晰度）、MP4 直链、WebDAV、FTP、OpenList 等多种视频源。
+    details: 支持 Bilibili（大会员清晰度）、MP4 直链、WebDAV、FTP、OpenList 等多种视频源。
   - icon: 💬
     title: 实时互动
     details: 评论面板、观众申请控制、语音聊天。

@@ -22,7 +22,7 @@ features:
     details: Create or join a room. The host controls play, pause, seek, and playback speed, while viewers follow in real time. If the host disconnects, the server takes over broadcasting to keep playback uninterrupted.
   - icon: 🔗
     title: Multi-source Video Parsing
-    details: Supports Bilibili (DASH merging, premium member resolution), direct MP4 links, WebDAV, FTP, OpenList, and more video sources.
+    details: Supports Bilibili (premium member resolution), direct MP4 links, WebDAV, FTP, OpenList, and more video sources.
   - icon: 💬
     title: Real-time Interaction
     details: Comment panel, viewer request for control, voice chat.

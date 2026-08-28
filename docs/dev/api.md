@@ -102,9 +102,7 @@
 | DELETE | `/file` | 删除文件/文件夹 |
 | GET | `/resolve` | 解析播放 URL |
 | GET | `/proxy` | 代理播放 |
-| GET | `/ffmpeg-status` | ffmpeg 状态 |
-| POST | `/ffmpeg-install` | 安装 ffmpeg |
-| POST | `/bilibili-download` | B站下载 |
+| POST | `/bilibili-download` | B站下载（仅 MP4，最高 720P） |
 
 ## 管理后台 `/api/admin`
 

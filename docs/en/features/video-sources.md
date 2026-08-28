@@ -92,7 +92,7 @@ ZViewer provides a native subtitle system that **no longer converts to WebVTT**.
 
 - Supports common subtitle formats (SRT, ASS, etc.), with native parsing for better style fidelity.
 - Supports three subtitle loading methods: **auto-detect**, **auto-add**, and **manual add**.
-- Built-in FFmpeg provides preliminary support for **DTS audio stream** playback (FFmpeg is automatically downloaded on first use, and manual download and installation are also supported).
+- Built-in browser-side ffmpeg.wasm audio transcode: **browser-incompatible tracks such as DTS/AC3** are transcoded to AAC in real time in the browser (requires enabling "Allow browser-side audio transcode" in the admin panel as a global permission and checking the corresponding engine when adding a movie; otherwise the incompatible audio is pushed directly and may be silent).
 
 ---
 
