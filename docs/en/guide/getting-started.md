@@ -4,6 +4,14 @@ Welcome to ZViewer! This tutorial will guide you through the complete process fr
 
 ---
 
+## Browser Requirements
+
+> **Strongly recommended to use a high-version Chromium-based browser such as Chrome / Edge (kernel 130+)** to access ZViewer.
+>
+> ⚠️ **Not recommended**: Safari and Firefox — due to differences in their support for MSE / MKV / browser-side decoding and transcoding, you may encounter playback stuttering, videos failing to decode, and subtitle extraction issues.
+
+---
+
 ## Step 1: Download ZViewer
 
 ZViewer offers two ways to run: **single-file version** and **source code version**.
