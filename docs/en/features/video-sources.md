@@ -92,7 +92,7 @@ ZViewer provides a native subtitle system that **no longer converts to WebVTT**.
 
 - Supports common subtitle formats (SRT, ASS, etc.), with native parsing for better style fidelity.
 - Supports three subtitle loading methods: **auto-detect**, **auto-add**, and **manual add**.
-- Built-in browser-side ffmpeg.wasm audio transcode: **browser-incompatible tracks such as DTS/AC3** are transcoded to AAC in real time in the browser (requires enabling "Allow browser-side audio transcode" in the admin panel as a global permission and checking the corresponding engine when adding a movie; otherwise the incompatible audio is pushed directly and may be silent).
+- Built-in browser-side playback engine **playsvideo**: containers the browser cannot play directly — **MKV / AVI / TS / WMV** — are automatically remuxed to fMP4 in the browser, and **browser-incompatible audio tracks such as DTS / AC3 / EAC3** are transcoded to AAC in real time in the browser. Everything works automatically with **no admin-panel toggles** and no manual engine selection when adding a movie; the transcode core ships with the frontend assets and no server-side FFmpeg is required.
 
 ---
 
@@ -303,7 +303,7 @@ A: Check the following:
 - Does the link start with `https://` or `http://`?
 - Can the link be opened directly in a browser?
 - Does the target server have hotlink protection (Referer restrictions)?
-- Is the video format supported by the browser (`.mp4` is recommended)?
+- Is the video format supported (`.mp4` / `.mkv` / `.avi` / `.ts` / `.wmv` all work — containers the browser cannot play directly are automatically remuxed by the playsvideo engine)?
 
 ### Q: WebDAV / FTP connection test fails?
 

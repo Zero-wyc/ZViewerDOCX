@@ -120,10 +120,15 @@ You can enable or disable the following experimental features:
 
 Enabling beta features may affect system stability; use them as needed.
 
-### FFmpeg Engine (Audio Transcode)
+### Browser-Side Playback Engine (playsvideo)
 
-- **Allow browser-side audio transcode (ffmpeg.wasm)**: Global permission toggle, **off by default**. When enabled, it merely **permits** the host to check "Enable FFmpeg WASM engine" when adding a movie. Only when both are enabled will movies with browser-incompatible audio tracks (DTS / AC3 / EAC3, etc.) be transcoded to AAC in real time in the browser via ffmpeg.wasm (about 30MB core is loaded on first use). Enabling this toggle alone does not auto-transcode any movie; when off, all movies are pushed directly and incompatible tracks may be silent.
-- **wasm engine download source**: Where the ffmpeg.wasm core is downloaded from (author direct link / server relay / custom link).
+> **Note for older versions**: the old "Allow browser-side audio transcode (ffmpeg.wasm)" global toggle, the "wasm engine download source" setting, and the "Enable FFmpeg WASM engine" checkbox when adding a movie have all been removed — no configuration is needed anymore.
+
+Browser-side container remuxing and audio transcoding are now handled **fully automatically by the playsvideo engine**, with no admin-panel toggles:
+
+- Containers the browser cannot play directly — **MKV / AVI / TS / WMV** — are automatically remuxed to fMP4 in the browser during playback.
+- Browser-incompatible audio tracks — **DTS / AC3 / EAC3** — are transcoded to AAC in real time in the browser; the transcode core ships with the frontend assets.
+- No admin-panel configuration is required, and there is no longer any engine checkbox when adding a movie.
 
 ### Kazumi Rule Source Configuration
 
