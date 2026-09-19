@@ -93,6 +93,7 @@ export default defineConfig({
               text: '功能特性',
               items: [
                 { text: '一起看房间', link: '/features/rooms' },
+                { text: '一起听音乐', link: '/features/music' },
                 { text: '视频源', link: '/features/video-sources' },
                 { text: '字幕', link: '/features/subtitles' },
                 { text: '实时互动', link: '/features/interaction' },
@@ -202,6 +203,7 @@ export default defineConfig({
               text: 'Features',
               items: [
                 { text: 'Watch Rooms', link: '/en/features/rooms' },
+                { text: 'Listen Together', link: '/en/features/music' },
                 { text: 'Video Sources', link: '/en/features/video-sources' },
                 { text: 'Real-time Interaction', link: '/en/features/interaction' },
                 { text: 'Danmaku System', link: '/en/features/danmaku' },
