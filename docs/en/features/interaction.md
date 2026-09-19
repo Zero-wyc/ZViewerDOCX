@@ -38,15 +38,42 @@ The voice chat panel (VoiceChatPanel) is permanently located at the **bottom-rig
 4. Once enabled, viewers can listen in
 
 > Voice uses **server relay mode** (rather than P2P) to address the issue of P2P being blocked in current NAT environments, which would otherwise prevent voice chat. In relay mode, audio streams are forwarded through the server, offering better compatibility without NAT type restrictions.
+>
+> The playback pipeline includes an **adaptive jitter buffer** that adjusts buffering based on network jitter, reducing stutter and latency. The codec pipeline locks the sample rate with decoding fallback, making the first word after unmuting sound more natural.
 
-### Viewers Listening
-The voice panel displays a member list, and you can adjust the speaker volume.
+### Member Identity and Display
 
-## 4. Screen Annotations
+- Voice members are bound to their **real identity** (logged-in users show their username, guests show their nickname), instead of socketId prefixes.
+- When a logged-in user reconnects after a disconnect, they **automatically replace** their old entry, eliminating ghost members from the source (e.g., "3 people in voice showing as 8").
+- The voice panel displays a member list, and you can adjust the speaker volume.
+
+### Voice Moderation (Host / Moderator)
+
+The host or a moderator can manage voice members:
+
+- **Voice mute / unmute**: While muted, the server relay layer directly drops the member's audio packets (enforced server-side; the client cannot bypass it). The muted member can still listen.
+- **Voice kick**: Kicks a member out of the voice channel (cannot rejoin during a 60-second cooldown).
+
+## 4. Moderator Role
+
+The host can appoint logged-in users as **moderators** (co-moderators) in the **Viewer Management** panel, up to 10.
+
+| Action | Host | Moderator | Viewer |
+|--------|------|-----------|--------|
+| Switch / remove videos | Yes | Yes | No |
+| Kick viewers | Yes | Yes | No |
+| Mute viewers | Yes | Yes | No |
+| Voice mute / kick | Yes | Yes | No |
+| Appoint / dismiss moderators | Yes | No | No |
+| Transfer host, modify room settings | Yes | No | No |
+
+> Moderators **cannot act on** the host, other moderators, or admin (root/admin) users; `root` accounts are protected in the room and cannot be muted or kicked.
+
+## 5. Screen Annotations
 
 In Screen Share mode, the host can use the pen tool to draw highlights on the screen, which all viewers can see in real time.
 
-## 5. Playback State Synchronization
+## 6. Playback State Synchronization
 
 When you join a room as a viewer, everything syncs automatically:
 - Host plays/pauses/seeks/changes speed -- you follow automatically
@@ -60,3 +87,9 @@ Make sure the host has enabled voice, check your speakers, check microphone perm
 
 ### The host didn't respond to my request?
 The host may not be present. Wait a moment. If auto-approve is enabled, the request takes effect automatically.
+
+### How do I appoint a moderator?
+In the **Viewer Management** panel, the host clicks the shield icon next to a target user to appoint or dismiss a moderator. Only the host can do this, and only logged-in users can be appointed.
+
+### If I'm voice-muted, can I still hear others?
+Yes. Voice mute only stops you from speaking (the server relay layer drops your audio packets); listening is unaffected.

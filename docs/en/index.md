@@ -19,13 +19,13 @@ hero:
 features:
   - icon: 🎬
     title: Watch Together Rooms
-    details: Create or join a room. The host controls play, pause, seek, and playback speed, while viewers follow in real time. If the host disconnects, the server takes over broadcasting to keep playback uninterrupted.
+    details: Create or join a room. The host controls play, pause, seek, and playback speed, while viewers follow in real time. If the host disconnects, the server takes over broadcasting to keep playback uninterrupted. The host can appoint moderators to help manage the room.
   - icon: 🔗
     title: Multi-source Video Parsing
-    details: Supports Bilibili (premium member resolution), direct MP4 links, WebDAV, FTP, OpenList, and more video sources.
+    details: Supports Bilibili (premium member resolution, short-link parsing), direct MP4 links, WebDAV, FTP, OpenList, Emby/Jellyfin, server files, and more video sources.
   - icon: 💬
     title: Real-time Interaction
-    details: Comment panel, viewer request for control, voice chat.
+    details: Comment panel, viewer request for control, voice chat (server relay) and voice moderation.
   - icon: 🗨️
     title: Danmaku System
     details: Supports Bilibili danmaku, DandanPlay danmaku, custom danmaku tracks, track overlaying, and danmaku doubling effects.
