@@ -42,13 +42,27 @@ ZViewer —— 多人同步观影、追番与远程共享平台。
 
 ## 文档站点
 
-本文档站基于 VitePress 构建，主要内容：
+本文档站基于 VitePress 构建，分为两个分区：
 
-- [快速开始](/guide/getting-started) — 从零开始搭建 ZViewer
-- [功能特性](/features/rooms) — 一起看房间、视频源、弹幕、互动、屏幕共享等
-- [部署指南](/guide/deployment) — 单文件、Docker、源码部署
-- [管理后台](/admin/permissions) — 用户管理、权限模型
-- [开发指南](/dev/setup) — 本地开发、项目结构、API 参考
+**基础教程**（[/basic/](/basic/)）— 安装部署与功能使用，语言精简：
+
+- [快速上手](/basic/) — 下载、启动、登录、建房、加影片
+- [安装与部署](/basic/install) — 单文件 / 源码 / Docker
+- [功能说明](/basic/features) — 全部功能一览与使用
+- [ZViewerCLI](/basic/cli) — 本地代理客户端
+- [管理后台](/basic/admin)、[HTTPS 证书](/basic/https)、[内网穿透](/basic/network)、[常见问题](/basic/faq)
+
+**拓展教程**（[/advanced/](/advanced/)）— 程序运行逻辑与接口设计，面向想深入了解或二次开发的用户：
+
+- [架构总览](/advanced/) — 进程模型、端口、技术栈
+- [房间同步逻辑](/advanced/sync) — 状态广播、控制权申请、离线关房
+- [视频源与 API 获取逻辑](/advanced/video-pipeline) — B站解析链、直链实时解析、播放引擎
+- [一起听音乐管线](/advanced/music-pipeline) — NCM 内部服务、音质降级链、凭证回退
+- [ZViewerCLI 代理协议](/advanced/cli-protocol) — 全局注册、归属过滤、代理链路
+- [主题系统实现](/advanced/theme-system) — Monet 色板、颜色强度、文字对比度作用域
+- [鉴权与权限模型](/advanced/auth)、[REST API 参考](/advanced/api)、[环境变量](/advanced/env)、[构建与更新](/advanced/build-update)
+
+English documentation is available at [/en/](/en/) (based on the previous structure).
 
 ## 许可
 

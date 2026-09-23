@@ -7,11 +7,11 @@ hero:
   tagline: 让一群人在不同地点也能像坐在一起一样看番、看电影。房主控制播放进度，观众实时跟随。
   actions:
     - theme: brand
-      text: 快速开始
-      link: /guide/getting-started
+      text: 基础教程
+      link: /basic/
     - theme: alt
-      text: 功能特性
-      link: /features/rooms
+      text: 拓展教程
+      link: /advanced/
     - theme: alt
       text: GitHub
       link: https://github.com/Zero-wyc/ZViewer

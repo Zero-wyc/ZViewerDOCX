@@ -69,66 +69,40 @@ export default defineConfig({
           },
         },
         nav: [
-          { text: '指南', link: '/guide/getting-started', activeMatch: '/guide/' },
-          { text: '功能', link: '/features/rooms', activeMatch: '/features/' },
-          { text: '管理', link: '/admin/permissions', activeMatch: '/admin/' },
-          { text: '本地代理CLI', link: '/cli/', activeMatch: '/cli/' },
-          { text: '开发', link: '/dev/setup', activeMatch: '/dev/' },
+          { text: '基础教程', link: '/basic/', activeMatch: '/basic/' },
+          { text: '拓展教程', link: '/advanced/', activeMatch: '/advanced/' },
           { text: 'GitHub', link: 'https://github.com/Zero-wyc/ZViewer' },
         ],
         sidebar: {
-          '/guide/': [
+          '/basic/': [
             {
-              text: '指南',
+              text: '基础教程',
               items: [
-                { text: '快速开始', link: '/guide/getting-started' },
-                { text: '网络连接与内网穿透', link: '/guide/network' },
-                { text: '部署方式', link: '/guide/deployment' },
-                { text: '常见问题', link: '/guide/faq' },
+                { text: '快速上手', link: '/basic/' },
+                { text: '安装与部署', link: '/basic/install' },
+                { text: '功能说明', link: '/basic/features' },
+                { text: 'ZViewerCLI 本地代理', link: '/basic/cli' },
+                { text: '管理后台与权限', link: '/basic/admin' },
+                { text: 'HTTPS 证书', link: '/basic/https' },
+                { text: '网络连接与内网穿透', link: '/basic/network' },
+                { text: '常见问题', link: '/basic/faq' },
               ],
             },
           ],
-          '/features/': [
+          '/advanced/': [
             {
-              text: '功能特性',
+              text: '拓展教程',
               items: [
-                { text: '一起看房间', link: '/features/rooms' },
-                { text: '一起听音乐', link: '/features/music' },
-                { text: '视频源', link: '/features/video-sources' },
-                { text: '字幕', link: '/features/subtitles' },
-                { text: '实时互动', link: '/features/interaction' },
-                { text: '弹幕系统', link: '/features/danmaku' },
-                { text: '屏幕共享与推流', link: '/features/screenshare' },
-              ],
-            },
-          ],
-          '/admin/': [
-            {
-              text: '管理',
-              items: [
-                { text: '权限模型', link: '/admin/permissions' },
-                { text: '管理后台', link: '/admin/admin-panel' },
-              ],
-            },
-          ],
-          '/dev/': [
-            {
-              text: '开发',
-              items: [
-                { text: '本地开发', link: '/dev/setup' },
-                { text: '项目结构', link: '/dev/structure' },
-                { text: '环境变量', link: '/dev/env' },
-                { text: 'HTTPS 与证书', link: '/dev/https' },
-                { text: 'API 参考', link: '/dev/api' },
-              ],
-            },
-          ],
-          '/cli/': [
-            {
-              text: 'CLI 本地代理',
-              items: [
-                { text: '概述与快速开始', link: '/cli/' },
-                { text: '使用指南', link: '/cli/guide' },
+                { text: '架构总览', link: '/advanced/' },
+                { text: '房间同步逻辑', link: '/advanced/sync' },
+                { text: '视频源与 API 获取逻辑', link: '/advanced/video-pipeline' },
+                { text: '一起听音乐管线', link: '/advanced/music-pipeline' },
+                { text: 'ZViewerCLI 代理协议', link: '/advanced/cli-protocol' },
+                { text: '主题系统实现', link: '/advanced/theme-system' },
+                { text: '鉴权与权限模型', link: '/advanced/auth' },
+                { text: 'REST API 参考', link: '/advanced/api' },
+                { text: '环境变量', link: '/advanced/env' },
+                { text: '构建与更新机制', link: '/advanced/build-update' },
               ],
             },
           ],
