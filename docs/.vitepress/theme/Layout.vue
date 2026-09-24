@@ -19,7 +19,10 @@ let bindRetryTimer: ReturnType<typeof setTimeout> | null = null
 let hintShown = false
 
 function loadBgState() {
-  const enabled = localStorage.getItem(STORAGE_KEY) === 'true'
+  // 默认显示背景：只有显式存过 'false'（长按隐藏过）才关闭，
+  // 未存过偏好（首次访问）视为开启
+  const stored = localStorage.getItem(STORAGE_KEY)
+  const enabled = stored === null ? true : stored === 'true'
   document.documentElement.setAttribute('data-bg', enabled ? 'true' : 'false')
 }
 
