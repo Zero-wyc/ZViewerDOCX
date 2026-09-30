@@ -2,6 +2,10 @@
 
 VitePress 1.6.3 文档站（`zviewer-docs`），源文件在 `docs/`，构建产物 `dist/`（build 时生成，git 忽略；但 `dist/404.html`、`dist/en/**`、`dist/index.html`、`dist/hashmap.json` 历史上被强制跟踪，`git add -A` 会带上它们）。
 
+## 协作注意
+
+用户会直接手动编辑 `docs/**` 并自行提交（例如 `3c06518 Update network.md` 改写了 `docs/basic/network.md` 的第 4 步；`docs/basic/index.md` 第 3 行也被手动改过）。因此每次动文件前先看工作区状态，不要把用户的手动改动当成自己的改动去回退或重写。
+
 ## 文档语言风格：《MDN 中文写作规范》（2026-09-30 确立）
 
 三个中文分区（`docs/basic/`、`docs/advanced/`、`docs/dev/`）统一按 MDN 风格撰写。曾经的「冷中性/去人称」版本已废弃，不要再退回。
