@@ -4,7 +4,7 @@ layout: home
 hero:
   name: ZViewer
   text: 多人同步观影、追番与远程共享平台
-  tagline: 让一群人在不同地点也能像坐在一起一样看番、看电影。房主控制播放进度，观众实时跟随。
+  tagline: 让一群人在不同地点也能像坐在一起一样看番、看电影。房主控制播放进度，观众实时同步。
   actions:
     - theme: brand
       text: 基础教程
@@ -13,28 +13,25 @@ hero:
       text: 拓展教程
       link: /advanced/
     - theme: alt
-      text: 开发教程
-      link: /dev/
-    - theme: alt
       text: GitHub
       link: https://github.com/Zero-wyc/ZViewer
 
 features:
   - icon: 🎬
     title: 一起看房间
-    details: 创建或加入房间，房主控制播放、暂停、跳转、倍速，观众实时跟随；房主断线由服务器接力广播，播放不中断；房主可任命房管协助管理房间。
+    details: 创建或加入房间，房主控制播放、暂停、跳转、倍速，观众实时跟随；房主断线由服务器继续广播，播放不暂停；房主可任命房管协助管理房间。
   - icon: 🎵
     title: 一起听音乐
-    details: 网易云 + B站 双音源房间同步听歌，Hydrogen 风格歌词播放页（频谱可视化、音质角标、评论区、弹幕），观众可申请控制，CLI 本地代理高画质。
+    details: 网易云 + B站 双音源房间同步听歌，优雅的歌词播放页（频谱可视化、评论区、弹幕），更有PV视频叠加，美丽丝滑
   - icon: 🔗
     title: 多源视频解析
-    details: 支持 Bilibili（大会员清晰度、短链解析）、MP4 直链、WebDAV、FTP、OpenList、Emby/Jellyfin、服务器文件等多种视频源。
+    details: 支持 Bilibili、MP4 直链、WebDAV、FTP、OpenList、Emby/Jellyfin、服务器文件等多种视频源。
   - icon: 💬
     title: 实时互动
-    details: 评论面板、观众申请控制、语音聊天（服务器中转）与语音管理。
+    details: 评论面板、观众申请控制、语音聊天与语音管理。
   - icon: 🗨️
     title: 弹幕系统
-    details: 支持 Bilibili 弹幕、DandanPlay 弹幕，自定义弹幕轨道，支持轨道叠加与弹幕翻倍效果。
+    details: 支持 Bilibili 弹幕、DandanPlay 弹幕，自定义弹幕轨道，支持轨道叠加以实现弹幕翻倍效果。
   - icon: 🖥️
     title: 屏幕共享与推流
     details: 基于 WebRTC 的屏幕共享，OBS RTMP 推流配合 Node Media Server 提供 HTTP-FLV 拉流。
@@ -42,6 +39,6 @@ features:
     title: Material You 主题
     details: 从壁纸提取色彩生成完整色板，明暗主题切换、自定义背景、玻璃拟态 UI。
   - icon: 🚀
-    title: 极简部署
-    details: 源码一键启动、单文件 exe、Docker 镜像、GitHub Actions 自动构建，纯 JS 实现无原生模块。
+    title: 快速部署
+    details: 源码一键启动、单文件 exe、Docker 镜像、GitHub Actions 自动构建
 ---
