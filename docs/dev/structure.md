@@ -1,10 +1,12 @@
 # 目录结构
 
-仓库分为三层目录：仓库根（工程与产物）、`backend/src`、`frontend/src`。三层内部划分对应[整体分层设计](/dev/#整体分层设计)中的装配层 / 接口层 / 领域层 / 服务层 / 数据层，以及前端的表现层 / 状态层 / 领域层 / 基础设施层。
+仓库的目录分成三层：仓库根（放工程配置与构建产物）、`backend/src` 和 `frontend/src`。这三层的内部划分，与[整体分层设计](/dev/#整体分层设计)里的装配层 / 接口层 / 领域层 / 服务层 / 数据层，以及前端的表现层 / 状态层 / 领域层 / 基础设施层一一对应。
 
 ---
 
 ## 仓库根目录
+
+仓库根放工作区配置、构建脚本与运行产物。
 
 ```
 ZViewer/
@@ -22,7 +24,7 @@ ZViewer/
 └── package.json           # workspaces 根：frontend + backend
 ```
 
-根 `package.json` 的脚本：
+根 `package.json` 定义了几个常用脚本。
 
 | 命令 | 行为 |
 |---|---|
@@ -32,11 +34,13 @@ ZViewer/
 | `npm start` | `node scripts/start.js`，转发到 `start-prod.sh` / `start-prod.bat` |
 | `npm run build:all` | `node build-all.js`，产出平台单文件 |
 
-`config/` 为唯一需要备份的目录。目录布局与旧版数据迁移逻辑见 `backend/src/services/paths.ts`；部署侧说明见[安装与部署](/basic/install)。
+`config/` 是唯一需要备份的目录。目录布局与旧版数据迁移逻辑见 `backend/src/services/paths.ts`；想了解部署过程，见[安装与部署](/basic/install)。
 
 ---
 
 ## 后端 `backend/src/`
+
+后端源码全部放在 `backend/src/` 下，入口是 `index.ts`。
 
 ```
 backend/src/
@@ -51,6 +55,8 @@ backend/src/
 └── utils/              # 通用工具
 ```
 
+关键目录各有明确职责。
+
 | 目录 | 职责 | 代表文件 |
 |---|---|---|
 | `entities/` | 持久化模型 | `Room.ts`、`Movie.ts`、`PlaybackState.ts`、`Session.ts`、`User.ts` |
@@ -59,11 +65,13 @@ backend/src/
 | `modules/` | 领域逻辑与实时协议 | `room/`、`sync-playback/`、`playback-memory/`、`movie/` |
 | `services/` | 技术能力（无 HTTP 语义） | `bilibili/`、`proxy/http-proxy.ts`、`paths.ts`、`db-persistence.ts`、`system-settings.ts` |
 
-各目录内部的职责划分见[后端架构](/dev/backend)。
+想了解各目录内部的职责划分，见[后端架构](/dev/backend)。
 
 ---
 
 ## 前端 `frontend/src/`
+
+前端源码放在 `frontend/src/` 下，入口是 `main.tsx`。
 
 ```
 frontend/src/
@@ -79,7 +87,7 @@ frontend/src/
 └── types/ utils/       # 类型与零散工具
 ```
 
-`vite.config.ts` 有三处非默认配置：
+`vite.config.ts` 改动了三处默认配置。
 
 | 配置 | 原因 |
 |---|---|
@@ -87,20 +95,22 @@ frontend/src/
 | `resolve.alias` 将 `mediabunny` 指向 `./vendor/mediabunny` | playsvideo 依赖 kzahel/mediabunny 的 integration fork，npm 上无对应发布版；vendored 后 dev/build 行为一致 |
 | `optimizeDeps.exclude: ['playsvideo']` | esbuild 预打包保留 `new Worker(new URL('./worker.js', import.meta.url))` 但不产出 worker 文件，dev 下 404 报 `Playback worker crashed` |
 
-各目录与模块的职责划分见[前端架构](/dev/frontend)。
+想了解各目录与模块的职责划分，见[前端架构](/dev/frontend)。
 
 ---
 
-## 开发环境与端口
+## 本地开发环境
+
+本地开发需要 Node.js 环境。先在仓库根安装依赖，再启动前端与后端。
 
 ```bash
 npm install
 npm run dev            # 前端 5174（HMR）+ 后端 3333（ts-node-dev --respawn）
 ```
 
-Vite 代理（`vite.config.ts` → `server.proxy`）将 `/api`、`/uploads`、`/socket.io`（`ws: true`）转发到 3333，`/live` 转发到 3335。开发模式不需要配置 `VITE_API_URL`。
+Vite 代理定义在 `vite.config.ts` 的 `server.proxy` 中。它把 `/api`、`/uploads`、`/socket.io`（`ws: true`）转发到 3333，把 `/live` 转发到 3335。开发模式不需要配置 `VITE_API_URL`。
 
-校验命令：
+提交代码前，建议跑一遍类型检查与 lint。
 
 ```bash
 cd frontend && npx tsc --noEmit        # 类型检查
@@ -108,6 +118,6 @@ cd frontend && npx eslint <改动文件>    # 要求 0 错 0 警
 cd backend  && npx tsc --noEmit        # 后端类型检查（等价 npm run lint -w backend）
 ```
 
-环境变量完整清单见[环境变量](/advanced/env)，构建与单文件打包见[构建与更新机制](/advanced/build-update)。
+完整的环境变量清单见[环境变量](/advanced/env)，构建流程与单文件打包见[构建与更新机制](/advanced/build-update)。
 
-相关页面：[后端架构](/dev/backend)
+后端各模块的职责划分见[后端架构](/dev/backend)。

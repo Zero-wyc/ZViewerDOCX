@@ -1,6 +1,10 @@
 # 环境变量
 
+ZViewer 的配置分两类：启动时读取的环境变量，以及运行时可改、存在数据库里的设置。这一页先列后端和前端的变量，再说明数据库切换与运行时可调项。
+
 ## 后端
+
+后端在启动时读取这些变量。未设置时，服务会采用第三列的默认值。
 
 | 变量 | 说明 | 默认值 |
 |---|---|---|
@@ -25,19 +29,21 @@
 
 ## 前端构建
 
+前端构建期的变量在打包时被写进产物，运行时就改不了了。
+
 | 变量 | 说明 | 默认值 |
 |---|---|---|
 | `VITE_API_URL` | API / Socket.IO 基础地址 | 空（`window.location.origin`） |
 | `VITE_FLV_BASE_URL` | OBS 推流模式 HTTP-FLV 拉流基础地址 | `/live`（后端反代到 NMS） |
 | `VITE_RTMP_PORT` | OBS 推流端口提示 | `3334` |
 
-前端构建期变量在 `npm run build` 时固化，运行时不可改；开发模式经 Vite 代理转发 `/api`、`/socket.io`、`/live` 到后端，无需配置 `VITE_API_URL`。
+这些变量在 `npm run build` 时固化，运行时不可改。开发模式下 Vite 会把 `/api`、`/socket.io`、`/live` 代理转发到后端，所以不需要配置 `VITE_API_URL`。
 
-运行时可在顶栏「自定义后端地址」覆盖，存于 localStorage：`zviewer-custom-api-url`、`zviewer-custom-socket-url`、`zviewer-custom-flv-base-url`、`zviewer-custom-rtmp-port`。
+运行时若要改后端地址，可以在顶栏「自定义后端地址」里覆盖，值存于 localStorage：`zviewer-custom-api-url`、`zviewer-custom-socket-url`、`zviewer-custom-flv-base-url`、`zviewer-custom-rtmp-port`。
 
 ## 数据库切换
 
-`DATABASE_URL` 支持两种形态：
+`DATABASE_URL` 接受两种形态，写法见下例。
 
 ```
 # SQLite（默认，文件路径）
@@ -47,8 +53,8 @@
 postgres://user:password@host:5432/zviewer
 ```
 
-切换后首次启动自动建表；SQLite 数据需手动迁移（`config/dev.sqlite` 为标准 SQLite 格式，可用常规工具导出导入）。sql.js 是 wasm 实现，无需原生编译。
+切换后首次启动会自动建表。SQLite 的数据需要手动迁移（`config/dev.sqlite` 是标准 SQLite 格式，可用常规工具导出导入）。数据库驱动 sql.js 是 wasm 实现，无需原生编译。
 
 ## 运行时可调项（管理后台，非环境变量）
 
-注册模式、建房模式、权限矩阵、功能开关（`dashDisabled` / `playsvideoEnabled` / `betaFeaturesEnabled`）、无人房间自动清理（`autoDeleteInactiveRooms` + `autoDeleteAfterHours`，默认 24 小时）、预发布更新接收等，均存库并通过 `/api/admin/settings` 修改，前端启动时经 `/api/auth/public-settings` 拉取。
+这些设置不在环境变量里，而是存在数据库中，通过管理后台修改。注册模式、建房模式、权限矩阵、功能开关（`dashDisabled` / `playsvideoEnabled` / `betaFeaturesEnabled`）、无人房间自动清理（`autoDeleteInactiveRooms` + `autoDeleteAfterHours`，默认 24 小时）、预发布更新接收等，均存库并通过 `/api/admin/settings` 修改，前端启动时经 `/api/auth/public-settings` 拉取。

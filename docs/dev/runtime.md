@@ -1,10 +1,12 @@
 # 运行流程
 
-本页描述后端的启动与初始化顺序、前端的初始化链路，以及五条主要链路的执行过程。代码位置标注到文件级。
+本页先讲后端和前端的启动顺序，再逐一走一遍五条主要链路。文中标注的代码位置精确到文件。
 
 ---
 
 ## 后端启动与初始化
+
+后端从进程启动到开始监听端口，依次经过下表这些阶段。这些阶段有固定顺序，每一步都依赖前一步的结果。各阶段的行为与代码位置如下。
 
 | 阶段 | 行为 | 代码位置 |
 |---|---|---|
@@ -27,6 +29,8 @@
 
 ## 前端启动与初始化
 
+前端启动链路比后端短。`main.tsx` 先装日志和调试探针，再渲染根组件；`App.tsx` 接着做健康检查、拉取公开设置、启动鉴权引导，最后把控制权交给路由。
+
 ```
 main.tsx
  ├─ initClientLogger()                # 控制台/异常上报通道
@@ -40,17 +44,19 @@ main.tsx
                 └─ useSocket()        # autoLoginStatus==='done' 才建连（全局单例）
 ```
 
-`RoomPage` 挂载后的动作顺序（`modules/room/RoomPage.tsx`）：
+`RoomPage` 挂载后按固定顺序做以下几件事（`modules/room/RoomPage.tsx`）。
 
-1. `roomId` 变化时重置 `roomStore` 与弹幕 store；切换房间且旧房间为本人房主时先 `emit('host-leave')`；设置 `activeRoomId`、`clientLoggerRoomId`；执行 `loadDanmakuTracks()` + `loadDanmakuMeta()`。
-2. 注册 `room-closed` 与 `disconnect` 兜底：收到 `room-closed` → `dispatchRoomMediaTeardown(true)` 停止本机全部媒体流并退回 `/room`；`disconnect` → 仅暂停媒体，重连后由同步流程恢复。
-3. 注册 `danmaku-tracks-updated`、`danmaku-meta-updated`、`room-name-updated` 监听。
-4. 若 `isHostOfRoom(roomId)`（`sessionStorage['zcontrol-host-room']` 标记）→ `emit('register-host', { roomId }, cb)`；回调完成后 `setHostRegistered(true)`，此时才渲染 `WatchTogetherPanel`，确保 `useWatchTogether` 挂载时 `initialPlayback` 已就绪。
-5. 观众渲染 `WatchPage`（`modules/screen-sharing`），由其完成加入与模式切换。
+1. `roomId` 变化时重置 `roomStore` 和弹幕 store。如果切换房间且旧房间的房主是本人，先 `emit('host-leave')`。然后设置 `activeRoomId` 和 `clientLoggerRoomId`，执行 `loadDanmakuTracks()` 与 `loadDanmakuMeta()`。
+2. 注册 `room-closed` 和 `disconnect` 两个兜底监听。收到 `room-closed` 时调用 `dispatchRoomMediaTeardown(true)`，停止本机全部媒体流并退回 `/room`；收到 `disconnect` 时只暂停媒体，等重连后由同步流程恢复。
+3. 注册 `danmaku-tracks-updated`、`danmaku-meta-updated`、`room-name-updated` 三个监听。
+4. 先判断 `isHostOfRoom(roomId)`（依据 `sessionStorage['zcontrol-host-room']` 标记）。为真时调用 `emit('register-host', { roomId }, cb)`。回调完成后才 `setHostRegistered(true)`，这时才开始渲染 `WatchTogetherPanel`，确保 `useWatchTogether` 挂载时 `initialPlayback` 已经就绪。
+5. 观众渲染 `WatchPage`（`modules/screen-sharing`），由它完成加入房间和模式切换。
 
 ---
 
 ## 链路一：创建房间 → 房主注册
+
+房主在 `RoomPanel` 选择共享方案后，创建请求经 Socket 打到后端。后端建库、注册房主会话，前端再把房间号写进 `sessionStorage` 并跳转到房间页。
 
 ```
 RoomPanel（选择共享方案）
@@ -70,11 +76,13 @@ RoomLifecycleHandler.register()            modules/room/handlers/room-lifecycle.
 前端写入 sessionStorage['zcontrol-host-room'] = roomId → navigate(`/room/${roomId}`)
 ```
 
-返回的 `data` 走标准 `AckResponse` 结构，业务字段位于 `data` 内；前端 `register-host` 回调解析时按同一约定取值。
+回调里所有 ack 都走 `AckResponse` 这一层统一结构，业务字段一律放在 `data` 里。前端 `register-host` 回调解析时按同一约定取值。
 
 ---
 
 ## 链路二：观众加入房间
+
+观众发出 `request-join` 后，后端要做一连串校验，全部通过才让人进房间。需要房主审批的房间则先把申请转给房主，等房主决定。
 
 ```
 观众 socket.emit('request-join', { roomId, password? }, ack)
@@ -97,17 +105,17 @@ ViewerJoinHandler.register()               modules/viewer/handlers/viewer-join.h
      房主端 approve-join / reject-join → 批准后 userId 写入 approvedViewers 永久免审批
 ```
 
-运行时状态（`roomStateService`）是唯一读取源：影片列表与当前影片均从内存副本读取，不查库。`sendCachedSubtitle` 用于给中途加入的观众补发字幕。
+运行时状态（`roomStateService`）是唯一的读取源：影片列表与当前影片都直接从内存副本读取，不查数据库。`sendCachedSubtitle` 负责给中途加入的观众补发字幕。
 
 ---
 
 ## 链路三：播放同步（房主 → 服务器 → 观众）
 
-同步链路分四段。
+播放同步链路分四段：房主采集并广播、服务器处理、观众对齐、房主离线后由服务器接管。
 
 ### ① 房主侧采集与广播
 
-`frontend/src/modules/sync-playback/hooks/`
+房主侧的同步逻辑拆成五个 Hook（React 里复用逻辑的函数，名字以 `use` 开头），都放在 `frontend/src/modules/sync-playback/hooks/`。
 
 | Hook | 职责 | 关键参数 |
 |---|---|---|
@@ -118,6 +126,8 @@ ViewerJoinHandler.register()               modules/viewer/handlers/viewer-join.h
 | `useHostSync` | 组合以上四个，对外暴露 `broadcastState / sendControl / forceSync` | — |
 
 ### ② 服务器侧处理
+
+服务器由 `PlaybackMemoryHandler` 统一注册三个同步事件的处理函数。示意图中的注释标出了每一步的代码位置。
 
 ```
 PlaybackMemoryHandler.register()          backend/src/modules/playback-memory/playback-memory.handler.ts
@@ -138,21 +148,21 @@ PlaybackMemoryHandler.register()          backend/src/modules/playback-memory/pl
     └─ 无状态时 socket.to(roomId).emit('watch-together-request-state') 让房主主动同步
 ```
 
-> `state` 与 `control` 的持久化时序相反：`state` 为权威快照，先落盘；`control` 为离散操作，优先广播。修改这两处前需先读 handler 注释。
+`watch-together-state` 和 `watch-together-control` 的落盘与广播顺序是反过来的，而且有意如此。`watch-together-state` 携带完整快照，属于权威数据，所以先写数据库再广播；`watch-together-control` 只是暂停、跳转这类离散操作，观众的即时感受更重要，所以先广播（一般 500 毫秒内到达）再写库。改这两处之前，先看 handler 里的注释。
 
 ### ③ 观众侧对齐
 
-`useViewerSync` 组合三个子 hook，职责划分如下：
+`useViewerSync` 组合三个子 Hook：一个只管离散字段，一个驱动进度心跳，一个负责首次拉取状态。三者的职责划分如下。
 
-- `useViewerStateSync` 只处理离散字段：`sourceUrl` 变化才重建播放流（以 `state.currentTime` 为起点）、`isPlaying` 变化才 play/pause、`playbackRate` 变化才设倍速；`currentTime` 不随状态事件设置。seq 跳号（`payload.seq > lastSeq + 1`）触发丢弃增量并请求全量自愈。
-- `useViewerHeartbeat` 驱动进度，两阶段策略（`services/seek-strategy.ts`）：差值 ≤ `max(3s, rate × 0.5)` 忽略；≤ 6s 软同步（倍速提到 `baseRate + 0.1`，封顶 2.0）；> 6s 硬 seek。
-- `usePlaybackStateRequest`（`modules/playback-memory`）在观众加入时从服务器取推算后的初始状态，不依赖房主响应；完成后写 `lastAppliedSourceUrlRef`，避免后续同源 state 重复 attach 覆盖已缓冲的 blob 源。
+- `useViewerStateSync` 只处理离散字段。`sourceUrl` 变化才重建播放流，并以 `state.currentTime` 为起点；`isPlaying` 变化才 play/pause；`playbackRate` 变化才设倍速；`currentTime` 不随状态事件设置。seq 跳号（`payload.seq > lastSeq + 1`）时丢弃增量，改为请求全量自愈。
+- `useViewerHeartbeat` 驱动进度，采用两阶段策略（`services/seek-strategy.ts`）：差值 ≤ `max(3s, rate × 0.5)` 直接忽略；≤ 6s 走软同步，把倍速提到 `baseRate + 0.1`，封顶 2.0；> 6s 走硬 seek。
+- `usePlaybackStateRequest`（`modules/playback-memory`）在观众加入时从服务器取推算后的初始状态，不依赖房主响应。取到后写入 `lastAppliedSourceUrlRef`，避免后续同源 state 重复 attach，覆盖已经缓冲的 blob 源。
 
-seek 统一入口为 `services/seek-service.ts` 的 `executeSeek`：目标在缓冲区内或缺口 ≤ 10s 走普通 seek，否则走 MSE Range seek（不重建 MediaSource），结束后补发合成 `seeked` 事件，保证外推基线新鲜。
+seek 的统一入口是 `services/seek-service.ts` 的 `executeSeek`。目标在缓冲区内或缺口 ≤ 10s 时走普通 seek，否则走 MSE Range seek（MSE 即 Media Source Extensions，用分段请求的方式跳转，不重建 MediaSource）。结束后补发一个合成的 `seeked` 事件，保证外推基线保持新鲜。
 
 ### ④ 房主离线后服务器接管
 
-`backend/src/modules/playback-memory/playback-broadcaster.service.ts`
+房主掉线后，服务器用两组定时器接管进度广播：每 2 秒广播一次，每 30 秒清理一次陈旧缓存。
 
 ```
 setInterval(2s) → broadcastAll()
@@ -166,13 +176,15 @@ setInterval(2s) → broadcastAll()
 setInterval(30s) → cleanupStaleCache() + roomStateService.cleanupStaleStates()
 ```
 
-`isHostOnline()` 的双条件（`hostSocketId` 非空且 `io.sockets.sockets.has(...)`）是该逻辑的正确性前提。
+`isHostOnline()` 用两个条件一起判断，缺一不可：`hostSocketId` 不为空，并且这个 id 还存在于 `io.sockets.sockets` 中。只看前者会出问题——后端重启后旧 socket id 仍留在数据库里，服务器会误以为房主在线，于是永远不接管心跳。
 
 前后端同步协议的完整事件清单与常量表见[房间同步逻辑](/advanced/sync)。
 
 ---
 
 ## 链路四：添加影片（REST 写 → Socket 广播）
+
+添加影片先走 REST 写库，再通过 Socket 把新列表广播给房间内的所有人。
 
 ```
 MoviePushPanel → roomStore.addMovie()
@@ -194,11 +206,13 @@ createMovieRouter()                       modules/movie/movie.routes.ts
   （roomStore.addMovie 只把新影片返回给调用方用于持久化解析偏好，不改列表）
 ```
 
-该链路的模式为「DB 为真源 → 内存副本同步 → 广播 → 前端镜像」。新增列表类数据（弹幕轨道、房管列表、音乐队列）按同一模式实现。
+这条链路的模式是「DB 为真源 → 同步内存副本 → 广播 → 前端镜像」。新增其他列表类数据（弹幕轨道、房管列表、音乐队列）时，按同一模式实现即可。
 
 ---
 
 ## 链路五：视频源解析与播放
+
+房主点选影片后，前端要先解析出可播放的视频源，再交给播放引擎。观众侧收到房主广播的状态后，走同一套引擎选择和附加流程。
 
 ```
 房主点选影片 → useWatchTogether.loadMovie()
@@ -220,6 +234,8 @@ useHostBroadcast 把新 state 广播 → 观众 useViewerStateSync 收到 source
 
 ## 房间生命周期与清理
 
+一个房间从创建到被删除，会经历房主暂离、重连、超时关房、主动关房等阶段。各阶段的触发条件、行为与代码位置如下。
+
 | 阶段 | 触发 | 行为 | 代码位置 |
 |---|---|---|---|
 | 房主暂离 | `host-leave` | 结束 sharer session、`updateHostSocket(roomId, null)`、广播 `host-disconnected`、启动 10 分钟重连定时器、socket leave（不断连） | `modules/room/handlers/room-lifecycle.handler.ts` |
@@ -229,20 +245,20 @@ useHostBroadcast 把新 state 广播 → 观众 useViewerStateSync 收到 source
 | 无人清理 | 每 1h | `cleanupInactiveRooms()` → `deleteRoomAndRelations()`（删除顺序受外键约束：`PlaybackState` 必须先于 `Room` 删除） | `backend/src/index.ts` |
 | 陈旧缓存 | 每 30s | `cleanupStaleCache()` + `cleanupStaleStates()`（房主离线且超 10 分钟） | `modules/playback-memory/playback-broadcaster.service.ts` |
 
-`closeRoomAndNotify` 与 `deleteRoomAndRelations` 遵循同一条约束：先广播 `room-closed`，再断开 socket。只断连不广播时，客户端会自动重连并继续播放，浏览器持续请求媒体分片，服务端持续代理上游流量，形成房间已删除但流量仍在运行的状态。
+`closeRoomAndNotify` 和 `deleteRoomAndRelations` 遵循同一条约束：先广播 `room-closed`，再断开 socket。如果只断连不广播，客户端会自动重连并继续播放，浏览器持续请求媒体分片，服务端持续代理上游流量，结果就是房间已经删除但流量仍在运行。
 
 ---
 
 ## 数据流转总览
 
-各链路的数据来源汇总如下：
+下表汇总每条链路的数据来源、权威读取源、广播事件和持久化位置。
 
 | 数据 | 写入路径 | 权威读取源 | 广播事件 | 持久化 |
 |---|---|---|---|---|
 | 影片列表 | REST（SQLite 直写） | 内存副本 → 广播 | `movie-list` | `Movie` 表 |
 | 当前影片 | Socket / REST | 内存副本 + `PlaybackState.currentMovieId` | `current-movie` | `PlaybackState` |
-| 播放状态 | Socket（房主 state/control） | `PlaybackMemoryService` 内存（推算） | `watch-together-state` / `watch-together-control` | `PlaybackState`（2s 节流） |
-| 播放进度基线 | Socket 心跳（5s） | 同上（10s 节流落盘） | `host-heartbeat` / `sync-heartbeat` | `PlaybackState.lastUpdatedAt` |
+| 播放状态 | Socket（房主 state/control） | `PlaybackMemoryService` 内存（推算） | `watch-together-state` / `watch-together-control` | `PlaybackState`（最多每 2 秒写一次） |
+| 播放进度基线 | Socket 心跳（5s） | 同上（最多每 10 秒落盘一次） | `host-heartbeat` / `sync-heartbeat` | `PlaybackState.lastUpdatedAt` |
 | 房主离线进度 | 服务器推算（2s） | `PlaybackMemoryService` | `server-heartbeat` / `sync-heartbeat(source:'server')` | 无（仅内存推算） |
 | 字幕轨道 | Socket（房主广播） | `RoomRuntimeState.subtitle` 缓存 | `subtitle-update` | 不落盘（供观众补发） |
 | 弹幕轨道 | REST + Socket | `DanmakuTrack` 表 | `danmaku-tracks-updated` | `DanmakuTrack` |
@@ -250,6 +266,6 @@ useHostBroadcast 把新 state 广播 → 观众 useViewerStateSync 收到 source
 | 成员 / 房管 | Socket | `Session` 表 + `Room.moderators` | `viewer-joined` / `viewer-left` / `moderators-changed` | `Session` / `Room` |
 | 音乐队列 | Socket + REST | `MusicQueueItem` 表（单表双源） | 音乐同步事件组 | `MusicQueueItem` |
 
-通用约束：广播的数据一律来自后端权威副本（内存或 DB），前端 store 为镜像。多端一致性由该约束保证，房主刷新 / 观众中途加入 / 服务器重启三个场景均有确定的恢复路径。
+有一条通用约束：广播的数据一律来自后端权威副本（内存或数据库），前端的 store 只是镜像。多端一致性由这条约束保证，房主刷新、观众中途加入、服务器重启三个场景都有确定的恢复路径。
 
-相关页面：[二次开发指南](/dev/guide)
+相关页面：[二次开发指南](/dev/guide)（新增代码的标准动作与常见错误）
