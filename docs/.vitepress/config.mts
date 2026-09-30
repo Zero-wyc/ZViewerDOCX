@@ -111,7 +111,12 @@ export default defineConfig({
             {
               text: '开发教程',
               items: [
-                { text: '架构与运行流程', link: '/dev/' },
+                { text: '总览与分层设计', link: '/dev/' },
+                { text: '目录结构', link: '/dev/structure' },
+                { text: '后端架构', link: '/dev/backend' },
+                { text: '前端架构', link: '/dev/frontend' },
+                { text: '运行流程', link: '/dev/runtime' },
+                { text: '二次开发指南', link: '/dev/guide' },
               ],
             },
           ],
