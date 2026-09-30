@@ -69,7 +69,7 @@ B站 API 公共请求封装：Chrome 120 UA + `Referer/Origin: https://www.bilib
 
 ### 引擎选择（`engine-selector.ts`）
 
-优先级：`format==='dash' || audioUrl` → **dash 引擎**（dash.js 动态生成 MPD 包装 m4s）→ `hls` → `flv` → `shouldUsePlaysVideo` → **direct**。
+优先级：`format==='dash' || audioUrl` → **videojs10-dash**（video.js 10 状态层 + dash.js 5.2.0 执行层，自研 MPD 构建包装 m4s）→ `hls` → `flv` → `shouldUsePlaysVideo()` 为真则 **playsvideo** → 否则 **direct**（`selectDirectEngine()`）。
 
 | 场景 | 引擎 | 判定 |
 |---|---|---|
