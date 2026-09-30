@@ -109,7 +109,7 @@ seek 本身统一走 `executeSeek`（`seek-service.ts`）。目标落在缓冲�
 - **WebRTC**：信令 `signal-offer/answer/ice-candidate` 定向转发，配合 `viewer-ready`/`sharer-ready` 握手。每个观众一条独立链路，天然互不影响。
 - **OBS 推流（stream-push）**：纯直播，没有逐观众的进度同步。「对齐」由 flv.js 的**追帧**实现：`liveBufferLatencyChasing: true`，最大延迟 1.5s、目标延迟 0.5s，多个观众会自动收敛到近实时。断流后指数退避重连（1s→16s，最多 5 次）。卡死检测（buffered 前沿停滞超过 0.5s）时 seek 到 `bufferedEnd - 0.3`。推流码校验在 `postPublish` 阶段完成，要求房间 active、投屏模式、stream-push 子模式三者同时满足，不合法则 `session.reject()`。
 
-## 常量速查
+## 常量查看
 
 下表汇总同步逻辑中最常用的常量，取值可对照 `sync-playback/constants.ts` 等文件。
 
