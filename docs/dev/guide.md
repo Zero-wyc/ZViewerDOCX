@@ -117,5 +117,6 @@ modules/<feature>/
 - [一起听音乐管线](/advanced/music-pipeline) — NCM 内嵌服务、音质降级链、队列模型
 - [ZViewerCLI 代理协议](/advanced/cli-protocol) — 全局注册、归属过滤、代理链路
 - [主题系统实现](/advanced/theme-system) — Monet 色板、对比度算法、玻璃拟态变量
+- [HTTPS 证书](/advanced/https) — 签发方式选择、ACME 流程、后端 HTTPS 启用
 - [鉴权与权限模型](/advanced/auth) — JWT 双 token、角色叠加、登录态边界
 - [REST API 参考](/advanced/api) / [环境变量](/advanced/env) / [构建与更新机制](/advanced/build-update)

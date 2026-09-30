@@ -5,7 +5,7 @@
 `localhost` 与公网 IP 使用自签证书，浏览器会提示"证书颁发机构不受信任"。解决方法：
 
 - 将 `config/ssl/cert.pem` 导入客户端"受信任的根证书颁发机构"；或
-- 使用域名并通过 Let's Encrypt 申请可信证书，详见 [HTTPS 与证书](/basic/https)。
+- 使用域名并通过 Let's Encrypt 申请可信证书，详见 [HTTPS 证书](/advanced/https)。
 
 ## WebSocket 连接失败
 

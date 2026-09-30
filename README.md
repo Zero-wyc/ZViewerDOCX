@@ -50,7 +50,7 @@ ZViewer —— 多人同步观影、追番与远程共享平台。
 - [安装与部署](/basic/install) — 单文件 / 源码 / Docker
 - [功能说明](/basic/features) — 全部功能一览与使用
 - [ZViewerCLI](/basic/cli) — 本地代理客户端
-- [管理后台](/basic/admin)、[HTTPS 证书](/basic/https)、[内网穿透](/basic/network)、[常见问题](/basic/faq)
+- [管理后台](/basic/admin)、[内网穿透](/basic/network)、[常见问题](/basic/faq)
 
 **拓展教程**（[/advanced/](/advanced/)）— 程序运行逻辑与接口设计，面向想深入了解或二次开发的用户：
 
@@ -60,6 +60,7 @@ ZViewer —— 多人同步观影、追番与远程共享平台。
 - [一起听音乐管线](/advanced/music-pipeline) — NCM 内部服务、音质降级链、凭证回退
 - [ZViewerCLI 代理协议](/advanced/cli-protocol) — 全局注册、归属过滤、代理链路
 - [主题系统实现](/advanced/theme-system) — Monet 色板、颜色强度、文字对比度作用域
+- [HTTPS 证书](/advanced/https) — 签发方式选择、ACME 流程、后端启用
 - [鉴权与权限模型](/advanced/auth)、[REST API 参考](/advanced/api)、[环境变量](/advanced/env)、[构建与更新](/advanced/build-update)
 
 **开发教程**（[/dev/](/dev/)）— 面向二次开发者，讲清代码怎么组织、请求怎么跑：

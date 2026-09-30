@@ -73,6 +73,7 @@ actualCurrentTime = currentTime + (Date.now() - lastUpdatedAt) / 1000 × playbac
 - [一起听音乐管线](/advanced/music-pipeline)
 - [ZViewerCLI 代理协议](/advanced/cli-protocol)
 - [主题系统实现](/advanced/theme-system)
+- [HTTPS 证书](/advanced/https)
 - [鉴权与权限模型](/advanced/auth)
 - [REST API 参考](/advanced/api)
 - [环境变量](/advanced/env)

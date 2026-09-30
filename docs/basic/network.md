@@ -154,5 +154,5 @@ http://[公网IPv6地址]:3333
 ### 注意事项
 
 - 家庭宽带 IPv6 前缀通常随拨号变化，如需稳定访问，可结合 **IPv6 DDNS** 将动态地址解析到域名。
-- 用 IPv6 访问时若配置了 SSL 证书，证书的 SAN 需包含该 IPv6 地址（`localhost` 自签证书的 SAN 含 `::1`；Let's Encrypt 签发支持公网 IP，含 IPv6）。详见 [开发 - HTTPS 与证书](/basic/https)。
+- 用 IPv6 访问时若配置了 SSL 证书，证书的 SAN 需包含该 IPv6 地址（`localhost` 自签证书的 SAN 含 `::1`；Let's Encrypt 签发支持公网 IP，含 IPv6）。详见 [HTTPS 证书](/advanced/https)。
 - 若客户端仅为 IPv4，无法直接访问 IPv6，仍需内网穿透或虚拟局域网方案。

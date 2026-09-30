@@ -54,9 +54,10 @@ start.bat start
 - [功能说明](/basic/features) — 全部功能的使用说明
 - [ZViewerCLI](/basic/cli) — 本地代理客户端安装与使用
 - [管理后台](/basic/admin) — 用户审核、房间管理、系统设置
-- [HTTPS 证书](/basic/https) — 证书签发与 HTTPS 启动
 - [网络连接与内网穿透](/basic/network) — FRP / ZeroTier / IPv6
 - [常见问题](/basic/faq)
+
+需要 HTTPS 时，用一键脚本签发并启动（`start.bat https` / `./start.sh https`）；证书签发机制与实现细节见 [HTTPS 证书](/advanced/https)。
 
 深入了解程序运行逻辑与接口设计 → [拓展教程](/advanced/)
 

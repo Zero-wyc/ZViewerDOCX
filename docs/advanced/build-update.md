@@ -10,7 +10,7 @@
 | Windows | `zviewer-backend.exe`、`zviewer-cert.exe`、`start.bat` → `zviewer-windows-x64.zip` |
 | Docker | `zerowyc0721/zviewer:latest`（Linux 单文件镜像） |
 
-`zviewer-cert` 是配套的证书工具（自签 HTTPS 证书生成/安装），见基础教程的 HTTPS 章节。
+`zviewer-cert` 是配套的证书工具（自签 HTTPS 证书生成/安装），见 [HTTPS 证书](/advanced/https)。
 
 ## CI（GitHub Actions）
 
