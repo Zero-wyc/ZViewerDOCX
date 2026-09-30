@@ -1,6 +1,6 @@
 # 二次开发指南
 
-本页给出新增代码时的标准动作与踩坑清单。前置阅读：[整体分层设计](/dev/#整体分层设计)、[后端架构](/dev/backend)、[前端架构](/dev/frontend)。
+本页给出新增代码的标准动作与常见错误。前置阅读：[整体分层设计](/dev/#整体分层设计)、[后端架构](/dev/backend)、[前端架构](/dev/frontend)。
 
 ---
 
@@ -34,16 +34,16 @@ export class XxxHandler implements SocketEventHandler {
 3. 在 `backend/src/index.ts` 的 `socketRegistry.add(...)` 链上追加一行。
 4. 前端在 `modules/sync-playback/constants.ts` 的 `SOCKET_EVENT` 中登记事件名（若属于同步协议），否则在对应模块内定义常量。
 
-**不需要**改动 `io.on('connection')`、不需要新增注册点——这正是 `SocketRegistry` 的设计目的。
+无需改动 `io.on('connection')`，也无需新增注册点；`SocketRegistry` 的设计目的即为此。
 
 ---
 
 ## 新增一个 REST 接口
 
-1. 判断归属：跨域通用能力放 `routes/`，领域内能力放 `modules/<domain>/<domain>.routes.ts`。
+1. 归属判断：跨域通用能力放 `routes/`，领域内能力放 `modules/<domain>/<domain>.routes.ts`。
 2. 鉴权：全局挂 `router.use(authenticateToken)`；管理端点加 `adminOnly` / `requireRoot`。
-3. 逻辑：**不在路由里写重逻辑**，下沉到 Service。
-4. 若改动了会被其他端感知的数据，调用对应的 Broadcaster（如 `movieBroadcasterService.broadcastMovieList`）。
+3. 逻辑下沉到 Service，路由内不写重逻辑。
+4. 若改动会被其他端感知的数据，调用对应的 Broadcaster（如 `movieBroadcasterService.broadcastMovieList`）。
 5. 响应格式：成功 `{ success: true, data? / <具名字段> }`，失败 `{ success: false, message }`；流式接口用 NDJSON（参考 `routes/stream/resolve.ts` 的 `NdjsonWriter`）。
 
 ---
@@ -65,7 +65,7 @@ export const myEngine: PlayerEngine = {
 
 2. 在 `types.ts` 的 `EngineType` 联合类型中登记。
 3. 在 `engine-selector.ts` 的 `ENGINES` 表中注册，并在 `selectEngine()` 中给出选择条件（顺序有意义）。
-4. 若引擎需要对外暴露 seek 能力，实现 `PlayerController` 接口并在 `attach` 结果的 `player` 字段返回。
+4. 若引擎需对外暴露 seek 能力，实现 `PlayerController` 接口，并在 `attach` 结果的 `player` 字段返回。
 5. 在 `player/index.ts` 视需要导出；更新[视频源与 API 获取逻辑](/advanced/video-pipeline)的引擎选择表。
 
 ---
@@ -81,31 +81,31 @@ modules/<feature>/
 └── index.ts        # 公共 API 出口
 ```
 
-状态优先放 `store/`，或用模块内 hook 局部持有；跨模块共享的状态才上升到 store。
+状态优先放 `store/`，或用模块内 hook 局部持有；仅跨模块共享的状态上升到 store。
 
 ---
 
-## 常见陷阱
+## 常见错误
 
-| 陷阱 | 表现 | 规避 |
+| 错误 | 表现 | 规避 |
 |---|---|---|
-| **破坏依赖方向** | 从子模块 import 根 `index.ts` → 循环依赖、启动报 `undefined` | 共享 Service 下沉到 `services/`（`system-settings.ts` 就是这么抽出来的）；必须引时用动态 `import()` |
-| **广播与持久化时序搞反** | 观众看到状态回跳 / seek 后暂停抖动 | `state` 先持久化后广播，`control` 先广播后持久化（见[运行流程 · 链路三](/dev/runtime)） |
-| **删除顺序不当** | SQLite 抛 `FOREIGN KEY constraint failed` | `PlaybackState` 必须先于 `Room` 删除（`deleteRoomAndRelations` 注释） |
-| **只断连不广播** | 房间已删但服务器仍在代理流量 | 关房一律先 `emit('room-closed')` 再 `disconnect` |
-| **本地改 state** | 多端列表不一致 | 写操作后等广播刷新（`roomStore` 约定） |
-| **依赖 isHostOnline 的旧 socket id** | 后端重启后服务器心跳永不接管 | 必须走 `playbackMemoryService.setIo(io)` + 双条件判定 |
-| **新增 handler 忘了注册** | 事件静默无响应 | 检查 `socketRegistry.add(...)` 链 |
-| **dev 下新增依赖触发 worker 404** | `Playback worker crashed` | 需要独立 worker 的包加入 `optimizeDeps.exclude` |
+| 破坏依赖方向 | 从子模块 import 根 `index.ts` → 循环依赖、启动报 `undefined` | 共享 Service 下沉到 `services/`（`system-settings.ts` 即为此抽出）；必须引用时用动态 `import()` |
+| 广播与持久化时序颠倒 | 观众看到状态回跳 / seek 后暂停抖动 | `state` 先持久化后广播，`control` 先广播后持久化（见[运行流程 · 链路三](/dev/runtime)） |
+| 删除顺序不当 | SQLite 抛 `FOREIGN KEY constraint failed` | `PlaybackState` 必须先于 `Room` 删除（`deleteRoomAndRelations` 注释） |
+| 只断连不广播 | 房间已删但服务器仍在代理流量 | 关房一律先 `emit('room-closed')` 再 `disconnect` |
+| 本地改 state | 多端列表不一致 | 写操作后等广播刷新（`roomStore` 约定） |
+| 依赖 `isHostOnline` 的旧 socket id | 后端重启后服务器心跳永不接管 | 必须走 `playbackMemoryService.setIo(io)` + 双条件判定 |
+| 新增 handler 未注册 | 事件静默无响应 | 检查 `socketRegistry.add(...)` 链 |
+| dev 下新增依赖触发 worker 404 | `Playback worker crashed` | 需要独立 worker 的包加入 `optimizeDeps.exclude` |
 
 ---
 
 ## 调试手段
 
-- **前端**：`window.__debugSocket` 暴露全局 socket 实例；`localStorage.zviewer-media-debug = '1'` 启用媒体探针（`__mediaDump()` 导出）。
-- **日志**：前端 console 与未捕获异常自动上报到后端 `log/frontend-console.log`（`initClientLogger`）；后端对 `/api/` 请求打印 `[req] METHOD STATUS SIZE ELAPSEDms PATH`，可直接区分代理流量与解析流量。
-- **健康检查**：`GET /health` 返回 `startedAt` / `restartCount`，前端 `useBackendHealth` 据此提示后端自动重启。
-- **数据库**：`config/dev.sqlite` 是标准 SQLite 文件，可用任意 SQLite 工具直接打开查看。
+- 前端：`window.__debugSocket` 暴露全局 socket 实例；`localStorage.zviewer-media-debug = '1'` 启用媒体探针（`__mediaDump()` 导出）。
+- 日志：前端 console 与未捕获异常自动上报到后端 `log/frontend-console.log`（`initClientLogger`）；后端对 `/api/` 请求打印 `[req] METHOD STATUS SIZE ELAPSEDms PATH`，可区分代理流量与解析流量。
+- 健康检查：`GET /health` 返回 `startedAt` / `restartCount`，前端 `useBackendHealth` 据此提示后端自动重启。
+- 数据库：`config/dev.sqlite` 是标准 SQLite 文件，可用任意 SQLite 工具直接打开查看。
 
 ---
 
