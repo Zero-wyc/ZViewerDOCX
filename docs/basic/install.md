@@ -1,6 +1,6 @@
 # 安装与部署
 
-## 单文件版（推荐）
+## 单文件版
 
 从 [Releases](https://github.com/Zero-wyc/ZViewer/releases) 下载压缩包，解压后运行。无需安装 Node.js / npm。
 
@@ -67,7 +67,7 @@ volumes:
   zviewer-data:
 ```
 
-- 镜像以 HTTP 模式启动，不自动签发证书；HTTPS 建议前置 Nginx / Caddy 反代。
+- 镜像以 HTTP 模式启动，不自动签发证书；HTTPS 宜前置 Nginx / Caddy 反代。
 - 容器内更新是替换程序文件后直接重启后端进程，不重启容器。
 
 ## 数据持久化
@@ -84,10 +84,10 @@ volumes:
 ## 首次启动检查
 
 1. 访问 `http://localhost:3333`，页面底部显示 🟢 已连接。
-2. 用 `root` / `root` 登录，立即改密码。
-3. 生产环境修改 `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET`（见[环境变量](/advanced/env)）。
+2. 用 `root` / `root` 登录并修改密码。
+3. 生产环境设置 `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET`（见[环境变量](/advanced/env)）。
 
-## 反向代理注意
+## 反向代理配置
 
 WebSocket 需要升级头：
 

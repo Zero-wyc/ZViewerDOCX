@@ -1,10 +1,10 @@
 # 网络连接与内网穿透
 
-ZViewer 部署在内网服务器时，外网用户无法直接访问。取决于你的网络环境，可以从**内网穿透**、**虚拟局域网**、**IPv6 直连**三种方案中选择合适的。
+ZViewer 部署在内网服务器时，外网用户无法直接访问。可按网络环境从内网穿透、虚拟局域网、IPv6 直连三种方案中选择。
 
-### 内网穿透（推荐新手,以樱花为例）
+### 内网穿透（以樱花 FRP 为例）
 
-[Sakura Frp](https://www.natfrp.com/) 是一个免费易用的内网穿透服务，无需自备公网 VPS，注册账号即可使用。
+[Sakura Frp](https://www.natfrp.com/) 是免费内网穿透服务，无需自备公网 VPS，注册账号即可使用。
 
 #### 注册与安装
 
@@ -12,11 +12,11 @@ ZViewer 部署在内网服务器时，外网用户无法直接访问。取决于
 2. 在「软件下载」页面下载对应系统的客户端。
 3. 登录后进入「管理面板」→「隧道」→「创建隧道」，配置本地端口为 `3333`。
 4. 在 ZViewer 的「自定义后端地址」中填入樱花分配的隧道地址，即可在外网使用。
-5. 建议直接在设置中使用域名访问并启用强制HTTPS，以直接实现项目全部功能
+5. 在设置中使用域名访问并启用强制 HTTPS，可覆盖项目全部功能。
 
-### FRP（推荐）
+### FRP
 
-[FRP](https://github.com/fatedier/frp) 是一款高性能的反向代理应用，支持 TCP、UDP、HTTP、HTTPS 协议，适合将内网 ZViewer 服务暴露到公网 VPS。
+[FRP](https://github.com/fatedier/frp) 是反向代理应用，支持 TCP、UDP、HTTP、HTTPS 协议，用于将内网 ZViewer 服务暴露到公网 VPS。
 
 #### 架构
 
@@ -37,7 +37,7 @@ vhostHTTPSPort = 443           # HTTPS 端口（可选）
 
 ```ini
 # frpc.toml
-serverAddr = "你的公网VPS_IP"
+serverAddr = "公网VPS_IP"
 serverPort = 7000
 
 [[proxies]]
@@ -63,13 +63,13 @@ remotePort = 3334
 
 #### 配置 HTTPS（FRP 转发）
 
-如果公网 VPS 有域名，可配置 FRP 的 HTTPS 转发，或使用 Nginx 反代 FRP 端口后申请 Let's Encrypt 证书。
+公网 VPS 有域名时，可配置 FRP 的 HTTPS 转发，或使用 Nginx 反代 FRP 端口后申请 Let's Encrypt 证书。
 
 ## 虚拟局域网
 
 ### 以 ZeroTier 为例
 
-[ZeroTier](https://www.zerotier.com/) 是一款软件定义网络（SDN）工具，将分布在不同网络的设备组成一个虚拟局域网，设备间可直接通信，无需公网 IP。
+[ZeroTier](https://www.zerotier.com/) 是软件定义网络（SDN）工具，将分布在不同网络的设备组成虚拟局域网，设备间可直接通信，无需公网 IP。
 
 #### 架构
 
@@ -111,7 +111,7 @@ sudo zerotier-cli set <Network ID> allowManaged=1
 http://10.147.20.1:3333
 ```
 
-> ZeroTier 的免费版支持最多 25 台设备，适合团队使用。设备间通信为 P2P 直连，不经过中心服务器，速度取决于两端带宽。
+> ZeroTier 免费版支持最多 25 台设备。设备间通信为 P2P 直连，不经过中心服务器，速度取决于两端带宽。
 
 ## 方案对比
 
@@ -122,16 +122,16 @@ http://10.147.20.1:3333
 | **ZeroTier** | 否（P2P 直连） | 取决于两端带宽，直连最快 | 简单 | 多设备组网、长期使用、需要高速传输的场景 |
 | **IPv6 直连** | 否 | 不限速（直连） | 简单 | 服务器与客户端均有可达 IPv6 的场景 |
 
-### 选择建议
+### 选型参考
 
 - **已有公网 VPS** → 使用 FRP，稳定可控。
-- **无公网 VPS，偶尔外网访问** → 使用 Sakura Frp，免费快速。
+- **无公网 VPS，偶尔外网访问** → 使用 Sakura Frp。
 - **需要长期稳定高速访问，且设备较多** → 使用 ZeroTier，P2P 直连不限速。
-- **服务器与客户端都有可达 IPv6** → 直接 IPv6 直连，无需任何穿透。
+- **服务器与客户端都有可达 IPv6** → 直接 IPv6 直连，无需穿透方案。
 
 ## IPv6 连接
 
-如果服务器和客户端都拥有**公网（可路由）的 IPv6 地址**，可以直接通过 IPv6 直连，无需内网穿透。ZViewer 后端**默认同时监听 IPv4 与 IPv6（双栈）**，因此服务器获得公网 IPv6 后，客户端即可直接访问。
+若服务器与客户端均拥有公网（可路由）的 IPv6 地址，可直接通过 IPv6 直连，无需内网穿透。ZViewer 后端默认同时监听 IPv4 与 IPv6（双栈），因此服务器获得公网 IPv6 后客户端即可直接访问。
 
 ### 前提条件
 
@@ -153,6 +153,6 @@ http://[公网IPv6地址]:3333
 
 ### 注意事项
 
-- 家庭宽带 IPv6 前缀通常随拨号变化，如需稳定访问，可结合 **IPv6 DDNS** 将动态地址解析到域名。
-- 用 IPv6 访问时若配置了 SSL 证书，证书的 SAN 需包含该 IPv6 地址（`localhost` 自签证书的 SAN 含 `::1`；Let's Encrypt 签发支持公网 IP，含 IPv6）。详见 [HTTPS 证书](/advanced/https)。
+- 家庭宽带 IPv6 前缀通常随拨号变化；如需稳定访问，可结合 IPv6 DDNS 将动态地址解析到域名。
+- 用 IPv6 访问时若配置了 SSL 证书，证书的 SAN 需包含该 IPv6 地址（`localhost` 自签证书的 SAN 含 `::1`；Let's Encrypt 签发支持公网 IP，含 IPv6）。见 [HTTPS 证书](/advanced/https)。
 - 若客户端仅为 IPv4，无法直接访问 IPv6，仍需内网穿透或虚拟局域网方案。
