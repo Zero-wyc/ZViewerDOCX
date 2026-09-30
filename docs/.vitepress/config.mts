@@ -71,6 +71,7 @@ export default defineConfig({
         nav: [
           { text: '基础教程', link: '/basic/', activeMatch: '/basic/' },
           { text: '拓展教程', link: '/advanced/', activeMatch: '/advanced/' },
+          { text: '开发教程', link: '/dev/', activeMatch: '/dev/' },
           { text: 'GitHub', link: 'https://github.com/Zero-wyc/ZViewer' },
         ],
         sidebar: {
@@ -103,6 +104,14 @@ export default defineConfig({
                 { text: 'REST API 参考', link: '/advanced/api' },
                 { text: '环境变量', link: '/advanced/env' },
                 { text: '构建与更新机制', link: '/advanced/build-update' },
+              ],
+            },
+          ],
+          '/dev/': [
+            {
+              text: '开发教程',
+              items: [
+                { text: '架构与运行流程', link: '/dev/' },
               ],
             },
           ],

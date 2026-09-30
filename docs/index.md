@@ -13,6 +13,9 @@ hero:
       text: 拓展教程
       link: /advanced/
     - theme: alt
+      text: 开发教程
+      link: /dev/
+    - theme: alt
       text: GitHub
       link: https://github.com/Zero-wyc/ZViewer
 

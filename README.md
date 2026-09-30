@@ -42,7 +42,7 @@ ZViewer —— 多人同步观影、追番与远程共享平台。
 
 ## 文档站点
 
-本文档站基于 VitePress 构建，分为两个分区：
+本文档站基于 VitePress 构建，分为三个分区：
 
 **基础教程**（[/basic/](/basic/)）— 安装部署与功能使用，语言精简：
 
@@ -61,6 +61,10 @@ ZViewer —— 多人同步观影、追番与远程共享平台。
 - [ZViewerCLI 代理协议](/advanced/cli-protocol) — 全局注册、归属过滤、代理链路
 - [主题系统实现](/advanced/theme-system) — Monet 色板、颜色强度、文字对比度作用域
 - [鉴权与权限模型](/advanced/auth)、[REST API 参考](/advanced/api)、[环境变量](/advanced/env)、[构建与更新](/advanced/build-update)
+
+**开发教程**（[/dev/](/dev/)）— 面向二次开发者，讲清代码怎么组织、请求怎么跑：
+
+- [架构与运行流程](/dev/) — 整体分层设计、目录结构与模块职责、依赖协作关系、启动初始化过程、关键链路与数据流转、二次开发指南
 
 English documentation is available at [/en/](/en/) (based on the previous structure).
 

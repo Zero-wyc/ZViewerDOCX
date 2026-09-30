@@ -29,7 +29,7 @@
 | `subtitle-update` / `subtitle-request` / `track-change` | 字幕/轨道 | 完整 tracks+cues 转发 + 缓存；轨道类型 `danmaku`/`subtitle` |
 | `send-danmaku` / `send-comment` / `annotation-stroke` | 弹幕/评论/批注 | 持久化 + 广播；发送前校验在房与禁言状态 |
 
-事件处理器统一注册在 `SocketRegistry`（17 个 handler，`backend/src/modules/*/handlers/`），ack 统一为 `{ success, message?, code?, data? }`。
+事件处理器统一注册在 `SocketRegistry`（20 个 handler，`backend/src/modules/*/handlers/`），ack 统一为 `{ success, message?, code?, data? }`。
 
 ## 房主同步模型
 

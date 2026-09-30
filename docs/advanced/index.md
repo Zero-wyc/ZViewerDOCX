@@ -21,7 +21,7 @@ RTMP 3334 → Node Media Server → FLV 3335（仅容器/本机内部）
 
 ## Socket.IO 事件注册模型
 
-后端所有实时事件经 `SocketRegistry`（`backend/src/modules/socket/event-handler.interface.ts`）统一注册：`io.on('connection')` 中依次调用 17 个事件 handler 的 `register(socket, io)`（`backend/src/index.ts`），每个 handler 只挂自己的事件名，ack 统一走 `safeAck` 包裹为 `{ success, message?, code?, data? }` 结构。新增实时能力时实现该接口即可，无需改动连接入口。
+后端所有实时事件经 `SocketRegistry`（`backend/src/modules/socket/event-handler.interface.ts`）统一注册：`io.on('connection')` 中依次调用 20 个事件 handler 的 `register(socket, io)`（`backend/src/index.ts`），每个 handler 只挂自己的事件名，ack 统一走 `safeAck` 包裹为 `{ success, message?, code?, data? }` 结构。新增实时能力时实现该接口即可，无需改动连接入口。
 
 连接鉴权在 `io.use` 中间件完成（`backend/src/index.ts`）：
 
@@ -77,3 +77,5 @@ actualCurrentTime = currentTime + (Date.now() - lastUpdatedAt) / 1000 × playbac
 - [REST API 参考](/advanced/api)
 - [环境变量](/advanced/env)
 - [构建与更新机制](/advanced/build-update)
+
+想进一步了解目录结构、模块职责与完整运行流程 → [开发教程](/dev/)
