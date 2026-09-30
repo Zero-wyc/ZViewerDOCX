@@ -1,18 +1,18 @@
 # 基础教程
 
-ZViewer 是多人同步观影、追番与远程共享平台。本章节为基础教程，大部分人使用这部分即可；程序运行逻辑与接口细节见[拓展教程](/advanced/)。
+ZViewer 是多人同步观影、追番与远程共享平台。本章节为基础教程，大部分人使用这部分即可；项目详细信息见[拓展教程](/advanced/)。
 
 ## 快速上手
 
 ### 1. 下载
 
-从 [Releases](https://github.com/Zero-wyc/ZViewer/releases) 下载对应系统的压缩包（Windows `zviewer-windows-x64.zip` / Linux `zviewer-linux-x64.tar.gz`），解压后运行，无需安装 Node.js。
+从 [Releases](https://github.com/Zero-wyc/ZViewer/releases) 下载对应系统的压缩包（Windows `zviewer-windows-x64.zip` / Linux `zviewer-linux-x64.tar.gz`），解压后运行。
 
 ### 2. 启动
 
 ```bash
 # Windows
-start.bat start
+start.bat start #也可以直接双击start.bat文件
 
 # Linux
 ./start.sh start
@@ -59,6 +59,6 @@ start.bat start
 | [网络连接与内网穿透](/basic/network) | FRP / ZeroTier / IPv6 |
 | [常见问题](/basic/faq) | 证书、WebSocket、数据库等常见问题 |
 
-需要 HTTPS 时，用一键脚本签发并启动（`start.bat https` / `./start.sh https`）；证书签发机制与实现细节见 [HTTPS 证书](/advanced/https)。
+需要 HTTPS 时，用一键脚本签发并启动（`start.bat https` / `./start.sh https`）；证书签发机制与实现细节见 [HTTPS 证书](/advanced/https)。（新手建议使用内网穿透的自动https或者配一个本地证书的就可以了，本地证书虽然会弹一个警告，但是无妨）
 
-相关页面：[拓展教程](/advanced/)（程序运行逻辑与接口设计）、[开发教程](/dev/)（代码组织与请求链路）。
+相关页面：[拓展教程](/advanced/)
