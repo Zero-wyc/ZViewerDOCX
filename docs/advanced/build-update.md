@@ -41,7 +41,7 @@ npm run dev:frontend   # 仅前端（5174，HMR）
 
 前端经 Vite 代理转发 `/api`、`/socket.io`、`/live` 到后端，无需配置 `VITE_API_URL`。
 
-校验命令（改动后建议跑一遍）：
+校验命令：
 
 ```bash
 cd frontend && npx tsc --noEmit      # 类型检查

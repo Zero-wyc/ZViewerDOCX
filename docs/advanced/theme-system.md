@@ -16,7 +16,7 @@
 | `backgroundWhiteOverlay` / `BlackOverlay` | `0` | 白/黑遮罩强度 |
 | `customColors` | `[]` | 收藏色板，上限 24 条 |
 
-深浅切换用 `setMode/setDark`，**不要裸 `set({isDark})`**——`isDark` 是 `mode` 的派生物（auto 时由 matchMedia 物化），破坏 mode 一致性会让 auto 判定失效。
+深浅切换用 `setMode/setDark`，不应直接 `set({isDark})`；`isDark` 是 `mode` 的派生物（auto 时由 matchMedia 物化），破坏 mode 一致性会使 auto 判定失效。
 
 ### auto 模式物化
 
@@ -39,7 +39,7 @@ effectiveSeed = mix(seed, base, intensity / 100)
 
 ## 文字对比度自适应
 
-自定义背景会改变文字的实际底色，而玻璃面板又叠了自己的底色——单一全局判定无法同时满足两类页面。实现为**三个作用域的 CSS 变量**：
+自定义背景会改变文字的实际底色，玻璃面板另有自身底色，单一全局判定无法同时覆盖两类页面。实现为三个作用域的 CSS 变量：
 
 | 变量组 | 判定依据 | 消费方 |
 |---|---|---|
@@ -55,8 +55,8 @@ effectiveSeed = mix(seed, base, intensity / 100)
 底色 → 壁纸（opacity 混合，32×32 canvas 降采样平均色） → 白遮罩 → 黑遮罩 → 玻璃面板层
 ```
 
-- 壁纸平均色用 32×32 canvas（`willReadFrequently`）求均值，结果按 URL 缓存（含失败）；**背景高斯模糊不改变平均亮度，不触发重采样**。
-- 玻璃层必须计入——深色模式的深玻璃会压暗文字底色，不计入会导致误判。
+- 壁纸平均色用 32×32 canvas（`willReadFrequently`）求均值，结果按 URL 缓存（含失败）；背景高斯模糊不改变平均亮度，不触发重采样。
+- 玻璃层必须计入；深色模式的深玻璃会压暗文字底色，不计入会导致误判。
 - 判定规则：对侧 scheme 文字色的对比度需比当前侧**高出 1.0**（切换幅度阈值）才切换，防临界抖动。覆盖变量仅四个中性文字色：`on-surface / on-surface-variant / outline / outline-variant`。
 
 ## 主题编辑栏
@@ -71,7 +71,7 @@ effectiveSeed = mix(seed, base, intensity / 100)
 
 ## 玻璃拟态变量体系
 
-ThemeProvider 注入一组派生变量，所有玻璃组件引用同一套工具类（`.glass` / `.glass-strong` / `.glass-card` / `.glass-bg`），不各写各的：
+ThemeProvider 注入一组派生变量，所有玻璃组件统一引用同一套工具类（`.glass` / `.glass-strong` / `.glass-card` / `.glass-bg`）：
 
 | 变量 | 公式 |
 |---|---|
@@ -81,17 +81,17 @@ ThemeProvider 注入一组派生变量，所有玻璃组件引用同一套工具
 | `--glass-bg` | `rgba(surface-container-rgb, glassStrength)` |
 | `--glass-border` | `rgba(rgb, min(1, strength + 0.15))` |
 
-`:root` 静态兜底值保证 ThemeProvider 挂载前（登录卡片首帧）即可生效。**lightningcss 压缩陷阱**：`-webkit-backdrop-filter` 必须写在标准属性之前，否则压缩去重后保留最后一条导致 Safari 失效。
+`:root` 静态兜底值保证 ThemeProvider 挂载前（登录卡片首帧）即可生效。lightningcss 压缩注意事项：`-webkit-backdrop-filter` 必须写在标准属性之前，否则压缩去重后保留最后一条，导致 Safari 失效。
 
 ## 入场动画与 Backdrop Root 约定
 
-这组约定来自多次真实故障复盘，写样式前应先读一遍：
+以下约定来自实际故障复盘：
 
-- **入场动画 fill 一律 `backwards`，禁用 `both/forwards`**：终帧与自然状态一致即可。`both/forwards` 会让元素动画结束后永久保持 transform，成为 **Backdrop Root**，后代玻璃层的 `backdrop-filter` 采样不到元素外背景直接失效（封面页毛玻璃丢失的根因）。exit 动画（终态消失）才用 forwards。
-- **弹出面板定位不依赖 transform**（如 `-translate-x-1/2` 居中）：keyframes 全程接管 transform 的动画期间偏移会丢失、结束跳位。居中/偏移用 `left/top + 负 margin` 或 `right` 定位；Dropdown 组件用 fixed + 数值内联定位 + 按 placement 覆写 `transformOrigin`。
-- **filter 也会制造 Backdrop Root**：`filter: drop-shadow(...)` 这类效果要分发到子元素，不能写在包含 glass-card 弹窗的容器上（播放队列弹窗模糊丢失的根因）。
-- **`overflow-y-auto` 会连带 `overflow-x: auto`**：滚动容器会裁掉 absolute 悬出的弹窗——滚动容器不包弹窗锚点，或弹窗改 fixed/sheet。
-- **absolute 背景覆盖层必须 `pointer-events-none`**：定位元素绘制在非定位流内容之上，无 pointer-events 的冰霜/底色层会吞掉同容器内交互元素的点击。
+- **入场动画 fill 一律 `backwards`，禁用 `both/forwards`**：终帧与自然状态一致即可。`both/forwards` 会使元素动画结束后永久保持 transform，成为 Backdrop Root，后代玻璃层的 `backdrop-filter` 采样不到元素外背景而直接失效（封面页毛玻璃丢失的原因）。exit 动画（终态消失）使用 forwards。
+- **弹出面板定位不依赖 transform**：以 `-translate-x-1/2` 居中的写法，在 keyframes 全程接管 transform 的动画期间偏移会丢失、结束跳位。居中/偏移用 `left/top + 负 margin` 或 `right` 定位；Dropdown 组件用 fixed + 数值内联定位 + 按 placement 覆写 `transformOrigin`。
+- **filter 也会制造 Backdrop Root**：`filter: drop-shadow(...)` 这类效果要分发到子元素，不能写在包含 glass-card 弹窗的容器上（播放队列弹窗模糊丢失的原因）。
+- **`overflow-y-auto` 会连带 `overflow-x: auto`**：滚动容器会裁掉 absolute 悬出的弹窗；滚动容器不包弹窗锚点，或弹窗改 fixed/sheet。
+- **absolute 背景覆盖层必须 `pointer-events-none`**：定位元素绘制在非定位流内容之上，无 pointer-events 的冰霜/底色层会拦截同容器内交互元素的点击。
 - **滑动条挂 `touch-slider`**（`touch-action: none`），防止触屏拖动连带页面滚动；hover 才显形的控件挂 `lt-touch-visible`（`pointer: coarse` 下常显）。
 
 ### 精简动画
@@ -105,6 +105,6 @@ ThemeProvider 注入一组派生变量，所有玻璃组件引用同一套工具
 ```
 
 - 默认壁纸 `/Nacho3.jpg`；自定义壁纸 opacity 直接生效，默认壁纸封顶 0.85。
-- **transform 组合顺序固定**：`translate(x/2%, y/2%) scale(s) rotate(r)`——translate 在前，避免缩放中心扩张吃掉偏移；百分比除以 2 限制最大偏移 ±50%。位置不用 `background-position`（百分比在 cover 下某方向无溢出时完全无效）。
+- **transform 组合顺序固定**：`translate(x/2%, y/2%) scale(s) rotate(r)`；translate 在前，避免缩放中心扩张抵消偏移；百分比除以 2 以限制最大偏移 ±50%。位置不使用 `background-position`（百分比在 cover 下某方向无溢出时无效）。
 - 内容层 `z-auto` 不创建层叠上下文，glass-card 的 backdrop-filter 才能跨层采样到 z-0 背景图。
 - 模糊随房间模式切换：`roomMode === 'listen-together' ? listenTogetherBlur : backgroundBlur`。

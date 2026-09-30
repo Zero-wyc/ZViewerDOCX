@@ -7,7 +7,7 @@
 1. 前端提交 BV / AV 号、视频链接或 b23.tv 短链。短链展开仅信任 `b23.tv` / `bili2233.cn` 两个域名（精确匹配），GET 跟随重定向、8s 超时，成功后立即取消响应体释放连接。
 2. 正则 `/BV[0-9A-Za-z]{10}/` 提取 BV 号（失败再试 av 号）；URL `?p=N` 与 `page` 参数解析分 P，`cid` 从视频信息 `pages` 反查。
 3. **匿名会话预热**：无 Cookie 时先调 `x/frontend/finger/spi` 取 buvid3/buvid4（30 分钟 TTL）——B站匿名接口需要设备指纹，否则部分请求被风控。
-4. **VIP 状态与视频信息并行请求**（省 1 个 RTT），VIP 判定缓存 5 分钟、视频信息缓存 2 分钟。
+4. **VIP 状态与视频信息并行请求**（减少 1 个 RTT），VIP 判定缓存 5 分钟、视频信息缓存 2 分钟。
 5. playurl 请求优先 WBI 签名端点（key 缓存 30 分钟），失败且非权限错误时降级未签名端点。
 6. 结果以 **NDJSON 流式响应**逐行输出，前端逐行读取渲染进度。
 
@@ -36,11 +36,11 @@
 
 - `VIP_ONLY_QNS = [112, 116, 120, 125, 126, 127]`（1080P+ / 1080P60 / 4K / HDR / 杜比 / 8K）。
 - 权限不足时自动降级重试：qn 降到 32/16；请求 qn 不在 acceptQuality 时回退最高可用档重新请求。
-- **MP4 模式（fnval=1 + platform=html5）最高仅 720P 是 B站服务端硬限制**，与是否会员无关；1080P+ 以上全部依赖 DASH 分离流。MP4 降级参数带 `try_look=1`（参考 synctv），返回无防盗链直链。
+- MP4 模式（fnval=1 + platform=html5）最高仅 720P，为 B站服务端硬限制，与会员状态无关；1080P 以上全部依赖 DASH 分离流。MP4 降级参数带 `try_look=1`（参考 synctv），返回无防盗链直链。
 
 ### CDN 健康检查
 
-对 baseUrl + backupUrl 并行发起 HEAD + `Range: bytes=0-0` 竞速，接受 `ok || 405`，单条超时 3.5s，整体兜底 4s 强制返回。部分 CDN 对 HEAD 返回 403 但 GET 正常，此时回退原始 URL。`.mcdn.bilivideo.cn:8082` 的 P2P CDN 地址会被移除端口改走 443，提升连通率。
+对 baseUrl + backupUrl 并行发起 HEAD + `Range: bytes=0-0` 竞速，接受 `ok || 405`，单条超时 3.5s，整体兜底 4s 强制返回。部分 CDN 对 HEAD 返回 403 但 GET 正常，此时回退原始 URL。`.mcdn.bilivideo.cn:8082` 的 P2P CDN 地址会被移除端口改走 443，以提高连通率。
 
 B站 API 公共请求封装：Chrome 120 UA + `Referer/Origin: https://www.bilibili.com`、单请求 10s 超时、**412 风控自动重试 3 次（1~2s 随机退避）**。
 
@@ -51,7 +51,7 @@ B站 API 公共请求封装：Chrome 120 UA + `Referer/Origin: https://www.bilib
 - **域名白名单**：媒体代理仅放行 `bilibili.com / bilivideo.com / hdslb.com / biliimg.com / bstatic.com` 等后缀匹配 + akamaized 精确项（共享 CDN 不能按后缀放行，否则会给第三方域名错误注入 B站 Referer）；图片代理仅放行 4 个 B站图床域名。
 - **防盗链头**：B站 URL 注入 `Referer/Origin: https://www.bilibili.com` + Chrome UA；非 B站 URL 不注入（错误的 Referer 反被源站拒绝）。
 - **Range 有界分片**：开放式 `bytes=0-` / 超长区间被截断为有界分片，suffix（`bytes=-N`）与多段原样透传；上游 206 必须转发；透传 `content-length/content-range/accept-ranges/etag/last-modified`，无条件补 `Accept-Ranges: bytes`；支持 `If-None-Match`/`If-Range` 走 304。
-- **断连销毁**：客户端 `res.on('close')` 时 abort 上游 fetch 并**显式 destroy 流**——Node 的 pipe 不会自动销毁源流，这是「用户下线后服务器流量仍在跑」的经典根因。
+- **断连销毁**：客户端 `res.on('close')` 时 abort 上游 fetch 并显式 destroy 流——Node 的 pipe 不会自动销毁源流，此为「用户下线后服务器流量仍在运行」的原因。
 - 上游 30s 超时只覆盖「连接+等响应头」，body 传输不中断；响应补 `X-Accel-Buffering: no` 禁用反代缓冲。
 - **前端路由决策中心**（`url-proxy.ts` `resolveMediaRoute`）：本站/blob/相对路径直连；B站 DASH（`.m4s`）强制走服务器代理（防盗链 + 无 CORS）；B站 MP4 直链先直连、失败回退代理一次；HTTPS 页面下的 http 跨域源走代理（混合内容防护，挂载直链模式跳过）；CLI 代理（127.0.0.1）属浏览器信任源，https 页面直连不受限。
 
@@ -60,7 +60,7 @@ B站 API 公共请求封装：Chrome 120 UA + `Referer/Origin: https://www.bilib
 影片记录的 url 是**添加时刻的快照**（AList 签名会过期、源站协议可能变化），播放时实时取新鲜直链，固化 URL 仅作兜底：
 
 - **5 分钟 TTL 缓存**（LRU，上限 500），缓存键 `type|serverUrl|path` 跨影片/跨房间共享。
-- **单飞去重**：并发同 key 共享同一个 Promise，完成才写缓存，避免冷启动时重复解析打挂源站。
+- **单飞去重**：并发同 key 共享同一个 Promise，完成才写缓存，避免冷启动时重复解析压垮源站。
 - 解析优先走 AList API（很多用户把 AList 以 WebDAV 类型挂载，API 签名直链更可靠）；webdav 失败回退直链拼接（Basic Auth 内嵌），openlist 失败直接报错不回退。ftp 无直链模式，固定走服务器代理。
 - **HTTPS 活性校验与自愈**（`mount-utils.ts`）：缓存记录「该源支持 https 直链」是一次性探测结果，源站事后撤掉 TLS 时缓存直链永久不可达。下发前对 https 端点现场再探测（HEAD，5s 超时，2xx~5xx 均算成功），失败即把 `httpsDirect` 改写为 false 并**持久化回写数据库**（自愈），本次返回 http 直链。前端另有兜底：http 页面加载 https 直链失败时降级 http 重试一次。
 - Emby / Jellyfin：`/resolve` 实时取 MediaSources，音轨不在浏览器支持白名单（aac/mp3/flac/opus/vorbis）时自动切服务端转码 HLS（`main.m3u8?AudioCodec=aac...`，转码代理超时放宽到 90s——转码冷启动 30s 默认超时会误杀）。
@@ -88,7 +88,7 @@ B站 API 公共请求封装：Chrome 120 UA + `Referer/Origin: https://www.bilib
 
 前端自研 `MatroskaDemuxer` 流式解复用（`lib/mkv/`），不用 ffmpeg.wasm（须整文件载入、上限 ~2GB）：
 
-- 头部 4MB Range 预取收齐 Tracks 元素；≤512MB 全量顺序扫描，更大文件走**稀疏提取**——Cues 锚点分段 + 元素 size 链前进 + 音视频负载字节算术跳过，5GB 级片源仅传输约 10% 字节；稀疏窗口 64KB（12 并发实测会打挂代理，限制 2 并发）、worker 按「距当前播放位置最近」优先级选锚点（seek 感知）。
+- 头部 4MB Range 预取收齐 Tracks 元素；≤512MB 全量顺序扫描，更大文件走**稀疏提取**——Cues 锚点分段 + 元素 size 链前进 + 音视频负载字节算术跳过，5GB 级片源仅传输约 10% 字节；稀疏窗口 64KB（12 并发实测会使代理失效，限制为 2 并发）、worker 按「距当前播放位置最近」优先级选锚点（seek 感知）。
 - 支持文本轨 SRT/ASS/SSA/WEBVTT；PGS/VOBSUB 位图轨标记不支持。
 - Emby/Jellyfin 的内嵌字幕走后端 `/embedded-tracks` + `/embedded-extract`（按扩展名路由转封装）；外挂字幕搜索覆盖 webdav/openlist/ftp/server-files 四源（文件上限 2MB）。
 
@@ -98,7 +98,7 @@ B站 API 公共请求封装：Chrome 120 UA + `Referer/Origin: https://www.bilib
 
 1. **带外校验**：subtitle_url 的 `oid` 参数必须等于 aid。
 2. **带内校验**：字幕时间轴终点须 ≈ 视频时长，容差 `max(10s, 时长 × 8%)`；前端须传 `&duration=`（秒），非法时服务端用官方时长兜底。
-3. **一致性投票**：最多 6 次尝试（间隔 180ms），按内容指纹（`len:首行:末行to`）投票，两次一致即确认；全部不达标**返回空而不是可疑字幕**。成功缓存 10 分钟、失败负缓存 60s。
+3. **一致性投票**：最多 6 次尝试（间隔 180ms），按内容指纹（`len:首行:末行to`）投票，两次一致即确认；全部不达标时返回空，不返回可疑字幕。成功缓存 10 分钟、失败负缓存 60s。
 
 ## 弹幕
 
@@ -110,7 +110,7 @@ B站 API 公共请求封装：Chrome 120 UA + `Referer/Origin: https://www.bilib
 
 - **Node Media Server**：RTMP 3334（`chunk_size: 60000, gop_cache: true, ping: 30`）、HTTP-FLV 3335（由主端口 `/live` 反代）。推流校验在 `postPublish` 业务层：`/live/<streamKey>` 且房间 active + 投屏模式 + stream-push 子模式。推流/断流事件广播 `stream-status {live|offline}`（活跃会话 Map 兜底，DB 查询失败也不漏广播）。
 - **OBS 配置一键下载**：`GET /api/stream-push/obs-config/:roomId` 生成 OBS 场景集合 JSON（rtmp_custom），无 streamKey 时自动生成。
-- **server-files B站下载**（仅 root）：`preferMp4 + skipCdnCheck`——DASH 分离流需服务器 FFmpeg 合并（已随服务器端 FFmpeg 移除），而 B站 MP4 接口本身硬限 720P，故「仅 MP4 最高 720P」；高画质下载走 CLI 模式。NDJSON 进度（每 2% 或 512KB 回调），失败自动清理不完整文件，VIP 档位做服务端强校验防绕过。
+- **server-files B站下载**（仅 root）：`preferMp4 + skipCdnCheck`——DASH 分离流需服务器 FFmpeg 合并（已随服务器端 FFmpeg 移除），而 B站 MP4 接口本身硬限 720P，因此仅 MP4 模式最高 720P；高画质下载走 CLI 模式。NDJSON 进度（每 2% 或 512KB 回调），失败自动清理不完整文件，VIP 档位做服务端强校验防绕过。
 
 ## 关键常量速查
 

@@ -12,8 +12,8 @@ JWT 双 token（`middleware/auth.ts`）：
 | Refresh（guest） | 7 天 | — | 同上 |
 
 - payload：`{ userId, role, username?, iat }`。
-- **三通道鉴权顺序** `extractAccessToken`：**query `token` → cookie `access_token` → `Authorization: Bearer`**。三通道并存的现实原因：REST 可用 Bearer 头；`<video>` / `<audio>` / MSE / hls.js 无法自定义头，媒体 URL 附加 query token；Socket.IO 走 cookie 或 `handshake.auth.token`。前端 `appendAuthToken()` 只对本站 `/api/` 路径附加 token（HTTP 无 auth cookie 场景）。
-- **密钥自举** `loadOrCreateSecret`：环境变量 → `config/jwt-secrets.json`（长度 ≥32 才采信）→ 自动生成 64 位 hex 写回文件。首次启动零配置可用，生产建议显式设环境变量。
+- **三通道鉴权顺序** `extractAccessToken`：**query `token` → cookie `access_token` → `Authorization: Bearer`**。三通道并存的原因：REST 可用 Bearer 头；`<video>` / `<audio>` / MSE / hls.js 无法自定义头，媒体 URL 附加 query token；Socket.IO 走 cookie 或 `handshake.auth.token`。前端 `appendAuthToken()` 只对本站 `/api/` 路径附加 token（HTTP 无 auth cookie 场景）。
+- **密钥自举** `loadOrCreateSecret`：环境变量 → `config/jwt-secrets.json`（长度 ≥32 才采信）→ 自动生成 64 位 hex 写回文件。首次启动无需配置，生产环境宜显式设置环境变量。
 - **refresh 不轮换**：`/refresh` 只重新签发 access token 并重写 cookie，refresh token 本身长期不变。
 - **吊销机制**：`User.tokenInvalidBefore` 时间戳——`authenticateToken` 中 `iat*1000 < invalidBefore` 即 401；改密、删除用户后调用 `invalidateUserTokens()` 写库 + 刷内存缓存（缓存 TTL 60s，改密路径主动写缓存保证立即生效）。游客（userId=0）无 User 行跳过检查。
 
@@ -26,7 +26,7 @@ JWT 双 token（`middleware/auth.ts`）：
 | 跨站 + HTTP | **无解**（SameSite=None 必须 Secure），需同站反代或升级 HTTPS |
 | HTTP 请求 | **不下发 cookie**（`isRequestSecure` 为 false 直接 return），统一走 Bearer |
 
-`isRequestSecure` 三级判定：`req.secure` → `X-Forwarded-Proto` 首段为 https → **Origin 头以 `https://` 开头即视为 secure**（内网穿透 / HTTP 反代 HTTPS 的兜底；伪造 Origin 的后果仅是对 http 连接下发 Secure cookie，浏览器会丢弃，无安全恶化）。跨站判定按 schemeful same-site 规则并**忽略端口**（兼容端口映射）。
+`isRequestSecure` 三级判定：`req.secure` → `X-Forwarded-Proto` 首段为 https → Origin 头以 `https://` 开头即视为 secure（内网穿透 / HTTP 反代 HTTPS 的兜底；伪造 Origin 的影响仅限于对 http 连接下发 Secure cookie，浏览器会丢弃，无安全恶化）。跨站判定按 schemeful same-site 规则并忽略端口（兼容端口映射）。
 
 ## 注册模式与游客
 
@@ -66,12 +66,12 @@ HTTP 侧：管理路由统一挂载 `authenticateToken + adminOnly`（root 或 a
 
 ## 前端登录态：预热与判定的边界
 
-这是「房间链接要输两次地址」类问题的根因所在，约定如下：
+该约定用于处理「房间链接需输入两次地址」类问题：
 
 - `authStore` 持久化 key **`zcontrol-auth-storage`**，持久化 `user / isAuthenticated / hasLoggedOut / autoLoginStatus`；**token 不持久化**（cookie 是存储介质）。
 - `autoLoginStatus` 虽持久化，但**只代表上一次页面生命周期**——它的唯一用途是让 `useSocket` 决定能否提前建连（避免匿名状态建连被拒）。
-- `authResolved` **不持久化**，代表本次页面加载的鉴权引导终态；`RequireAuth` 只看它：未 resolved 时原地渲染 `null` 等待（不重定向），resolved 且未认证才跳 `/login`。拿持久化的 `done`（登出残留）判重定向会把未认证首访弹去登录页。
-- 登出 / 会话失效用 `expireSession()`：清 user 且把 `autoLoginStatus` 重回 `idle`（绝不能置 `done`）。
+- `authResolved` **不持久化**，代表本次页面加载的鉴权引导终态；`RequireAuth` 只看它：未 resolved 时原地渲染 `null` 等待（不重定向），resolved 且未认证才跳 `/login`。以持久化的 `done`（登出残留）判断重定向，会把未认证首访跳转到登录页。
+- 登出 / 会话失效用 `expireSession()`：清 user 并把 `autoLoginStatus` 重回 `idle`（不可置 `done`）。
 - 启动流程（AuthInitializer）：`GET /auth/me`（网络错误最多重试 8 次，间隔 2s）→ 失效则 `expireSession()` → 自动领游客令牌（最多 3 次，退避 1.5s×n，仅 429/5xx/网络错误重试）→ `reconnectSocket()`；终态必置 resolved。
 
 ## 连接降级与 401 拦截
@@ -82,7 +82,7 @@ HTTP 侧：管理路由统一挂载 `authenticateToken + adminOnly`（root 或 a
 
 ## 接口权限速览
 
-- 公开：健康检查、注册模式/公开设置、注册与登录、游客令牌、B站图片代理（其余代理需登录，防白嫖带宽）。
+- 公开：健康检查、注册模式/公开设置、注册与登录、游客令牌、B站图片代理（其余代理需登录，防止带宽滥用）。
 - 登录即可：挂载点、解析、代理、音乐、房间加入。
 - 房主/root：房间删除、改名等房间级写操作。
 - admin/root：管理后台读；root-only：用户审核/角色/删除、系统设置修改、更新、服务器文件。

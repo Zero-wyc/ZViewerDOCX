@@ -1,6 +1,6 @@
 # ZViewerCLI 代理协议
 
-[ZViewerCLI](https://github.com/Zero-wyc/ZViewerCLI)（Go，独立仓库）通过 Socket.IO 与服务器通信，为浏览器补上**本地 Bilibili Cookie** 与流代理能力——Cookie 只存在用户本机，不经服务器。
+[ZViewerCLI](https://github.com/Zero-wyc/ZViewerCLI)（Go，独立仓库）通过 Socket.IO 与服务器通信，为浏览器提供本地 Bilibili Cookie 与流代理能力；Cookie 仅存于用户本机，不经服务器。
 
 ## 注册流程（v0.2.0 去房间化）
 
@@ -22,10 +22,10 @@
 
 ## 关键语义
 
-- **一个 CLI 对服务器上所有房间可用**。房间内的 CLI 功能开关（音乐视频高画质 `musicVideoCli` / `cliEnabled`）打开即自动使用，没有"逐房间连接"的概念。
-- **user 归属过滤**：前端 `useCliAgent()` 无参调用，内部按 `authStore` 的登录用户名过滤——仅保留 `!a.user || a.user === username`（不带 `user` 的旧版 CLI 视为公共代理，全员可见），过滤后才写入 cliAgentStore，因此 store 里只有"我的"代理，`getActiveCliProxyUrl` 直接取 `agents[0].proxyUrl`。
+- **一个 CLI 对服务器上所有房间可用**。房间内的 CLI 功能开关（音乐视频高画质 `musicVideoCli` / `cliEnabled`）开启后自动使用，不存在逐房间连接的概念。
+- **user 归属过滤**：前端 `useCliAgent()` 无参调用，内部按 `authStore` 的登录用户名过滤，仅保留 `!a.user || a.user === username`（不带 `user` 的旧版 CLI 视为公共代理，全员可见）；过滤后才写入 cliAgentStore，store 内仅含当前用户的代理，`getActiveCliProxyUrl` 直接取 `agents[0].proxyUrl`。
 - **配置是内存态**：CLI 重启后 `serverUrl` / `user` 丢失（仅 Cookie 持久化在 `~/.zviewer/config.json`），需从网页端配置页重新带入。
-- 可用性判定 `available = agents.length > 0`——**不再强制要求本地健康检查通过**（健康检查可能因 CORS 失败但实际 HTTP 服务可用）。健康检查仅在 http 本地页面执行（5s 轮询 `/health`），https 页面跳过。
+- 可用性判定 `available = agents.length > 0`，不强制要求本地健康检查通过（健康检查可能因 CORS 失败，而实际 HTTP 服务可用）。健康检查仅在 http 本地页面执行（5s 轮询 `/health`），https 页面跳过。
 
 ## 本地代理与解析
 
@@ -44,7 +44,7 @@ Bilibili CDN（up to 大会员档位）
 - **DASH 优先**：已连接 CLI 的高画质模式强制 `forceDash`（禁用 MP4 降级），音视频 m4s 分离；`/resolve` 同时返回原始 CDN URL（供 `/api/dash-mpd` 生成 MPD 喂 MSE）与重写为本地代理的 URL。
 - **CDN 兜底重试**：`/proxy` 主 URL 失败时按解析期缓存的 `backupUrl` 候选依次重试；透传 Range；B站 CDN 偶发返回 `application/json` 的视频数据时纠正为 `video/mp4`；上游超时 60s，连接池 `MaxIdleConns=100 / PerHost=20`。
 - **清晰度**：qn 档位 127(8K)/126(杜比)/125(HDR)/120(4K)/116/112/80/74/64/32/16；`fnval = 16 | (VIP ? 128 : 0)`，qn=127 追加 8K 标志位；会员档白名单 `[112,116,120,125,126,127]`。MP4 直链上限 1080P（`mp4MaxQn=80`）。
-- **后端侧 `/api/cli/resolve`**：供 CLI 用**用户请求头自带的 B站 Cookie** 解析（需含 SESSDATA），`skipCdnCheck: true`——实际视频流由用户本机浏览器→CLI 拉取，服务器无需校验 CDN 可达性，避免远程网络差异导致错误降级。
+- **后端侧 `/api/cli/resolve`**：供 CLI 用用户请求头自带的 B站 Cookie 解析（需含 SESSDATA），`skipCdnCheck: true`；实际视频流由用户本机浏览器经 CLI 拉取，服务器无需校验 CDN 可达性，避免远程网络差异导致错误降级。
 - **非会员保护**：前端开启 CLI 且代理在线时查询会员状态，非会员且已选会员档（qn > 80）自动回落 0（跟随账号默认）。
 - 解析结果缓存：音频直链 2 小时 TTL；VIP 状态缓存 5 分钟。
 
@@ -62,11 +62,11 @@ Bilibili CDN（up to 大会员档位）
 - CLI 侧：服务器主导 ping/pong；`lastActivityAt` 超过 `pingInterval + pingTimeout`（下限 45s）强制重连；`reconnectLoop` 指数退避 base 2s / max 60s + ±25% 抖动。
 - 前端侧：3s 轮询 `cli-list-agents` + 监听 `cli-agent-available/unavailable/cli-agents` 事件实时刷新。
 
-## 排查
+## 故障排查
 
 | 现象 | 检查 |
 |---|---|
-| 配置页连不上 | 服务器地址是否可达；CLI 是否保持运行（注册是内存态）；`-port` 是否被占用 |
+| 配置页无法连接 | 服务器地址是否可达；CLI 是否保持运行（注册是内存态）；`-port` 是否被占用 |
 | 代理列表为空 | CLI 的 `user` 与网页登录用户名是否一致；CLI 是否已完成 `cli-register` |
 | 高画质仍失败 | Cookie 是否有效（网页端能看对应清晰度）；会员档是否被非会员保护回落；CLI 版本 ≥ 0.2.0 |
 | 播放报 CORS | 代理 URL host 是否被规范为 127.0.0.1（旧版 CLI 会误报页面 host） |

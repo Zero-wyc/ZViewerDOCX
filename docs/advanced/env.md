@@ -10,8 +10,8 @@
 | `DATABASE_URL` | SQLite 文件路径或 PostgreSQL 连接串 | `<config>/dev.sqlite` |
 | `CONFIG_DIR` | 数据根目录 | `<project-root>/config` |
 | `CORS_ORIGIN` | CORS 允许来源，多个逗号分隔 | `*` |
-| `JWT_ACCESS_SECRET` | Access Token 密钥（生产建议显式设置） | 自动生成并写入 `config/jwt-secrets.json` |
-| `JWT_REFRESH_SECRET` | Refresh Token 密钥（生产建议显式设置） | 同上 |
+| `JWT_ACCESS_SECRET` | Access Token 密钥（生产环境宜显式设置） | 自动生成并写入 `config/jwt-secrets.json` |
+| `JWT_REFRESH_SECRET` | Refresh Token 密钥（生产环境宜显式设置） | 同上 |
 | `JWT_ACCESS_EXPIRES_IN` | Access Token 有效期 | `1h` |
 | `JWT_REFRESH_EXPIRES_IN` | Refresh Token 有效期 | `30d`（guest 恒为 1h / 7d） |
 | `RTMP_PORT` | RTMP 推流端口 | `3334` |
@@ -21,7 +21,7 @@
 
 单文件版的配置写入 `config/` 目录下的环境文件；Docker 通过 `-e` 或 compose `environment` 注入。
 
-**JWT 密钥自举**：未设环境变量时读 `config/jwt-secrets.json`（长度 ≥32 才采信），仍无则自动生成 64 位 hex 写回文件——首次启动零配置可用，但生产环境固定密钥可避免重启后登录态失效。
+**JWT 密钥自举**：未设环境变量时读 `config/jwt-secrets.json`（长度 ≥32 才采信），仍无则自动生成 64 位 hex 写回文件。首次启动无需配置；生产环境固定密钥可避免重启后登录态失效。
 
 ## 前端构建
 
@@ -47,7 +47,7 @@
 postgres://user:password@host:5432/zviewer
 ```
 
-切换后首次启动自动建表；SQLite 数据需自行迁移（`config/dev.sqlite` 为标准 SQLite 格式，可用常规工具导出导入）。sql.js 是 wasm 实现，无需原生编译。
+切换后首次启动自动建表；SQLite 数据需手动迁移（`config/dev.sqlite` 为标准 SQLite 格式，可用常规工具导出导入）。sql.js 是 wasm 实现，无需原生编译。
 
 ## 运行时可调项（管理后台，非环境变量）
 

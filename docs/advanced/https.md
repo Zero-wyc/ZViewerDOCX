@@ -1,6 +1,6 @@
 # HTTPS 证书
 
-HTTPS 模式由后端单进程直接提供（`HTTPS=true`），证书由配套工具 `zviewer-cert` 签发。本页先讲签发与启动的使用方式，再讲工具与后端侧的实现。
+HTTPS 模式由后端单进程直接提供（`HTTPS=true`），证书由配套工具 `zviewer-cert` 签发。本页覆盖签发与启动的使用方式，以及工具与后端侧的实现。
 
 ---
 
@@ -15,7 +15,7 @@ HTTPS 模式由后端单进程直接提供（`HTTPS=true`），证书由配套�
 | 公网 IP | Let's Encrypt | 支持 IP 证书（含 IPv6） |
 | 内网 IP | 自签 | SAN 写入 IP 条目 |
 
-判定由工具自动完成（`identifierType` 为 `dns` / `ip` 自动检测），需要覆盖时用 `--selfsigned` 强制自签。
+判定由工具自动完成（`identifierType` 自动检测 dns / ip），需要覆盖时用 `--selfsigned` 强制自签。
 
 ## 签发命令
 
@@ -53,12 +53,12 @@ Linux 下把 `start.bat` 换成 `./start.sh`。
 
 | 组成 | 位置 | 说明 |
 |---|---|---|
-| 签发入口 | `scripts/generate-cert.js` | 自签 / 可信 CA 双模式；用 `node-forge` 生成 X.509，**不依赖 openssl 或任何系统工具** |
+| 签发入口 | `scripts/generate-cert.js` | 自签 / 可信 CA 双模式；用 `node-forge` 生成 X.509，不依赖 openssl 或任何系统工具 |
 | ACME 客户端 | `scripts/acme-client.js` | ACME v2（RFC 8555）HTTP-01 客户端，纯 Node 内置模块 + node-forge 实现 |
 | 产物 | `zviewer-cert` / `zviewer-cert.exe` | 由 `build-all.js` 单独打包（entry 为 `scripts/generate-cert.js`），随单文件发行包分发 |
 | 调用方 | `packaging/start-win.ps1`、`packaging/start-linux.sh` | 一键启动脚本的 `cert` / `https` 子命令转调该产物 |
 
-打包后 `__dirname` 指向虚拟文件系统，因此工具改用 `process.cwd()` 定位 `config/ssl`——即**证书目录跟随可执行文件所在目录**。
+打包后 `__dirname` 指向虚拟文件系统，因此工具改用 `process.cwd()` 定位 `config/ssl`，即证书目录跟随可执行文件所在目录。
 
 ### 自签流程
 
@@ -97,9 +97,9 @@ const keyPath  = process.env.SSL_KEY_PATH  || path.join(sslDir, 'key.pem');
 // 证书文件缺失 → 打印提示并 process.exit(1)
 ```
 
-即：`HTTPS=true` 时用 `https.createServer` 承载同一个 Express 应用；证书路径可用 `SSL_CERT_PATH` / `SSL_KEY_PATH` 覆盖，缺省为 `config/ssl/cert.pem` 与 `config/ssl/key.pem`。HTTP 与 HTTPS 是**二选一**，不存在双端口并存。环境变量清单见[环境变量](/advanced/env)。
+即 `HTTPS=true` 时用 `https.createServer` 承载同一个 Express 应用；证书路径可用 `SSL_CERT_PATH` / `SSL_KEY_PATH` 覆盖，缺省为 `config/ssl/cert.pem` 与 `config/ssl/key.pem`。HTTP 与 HTTPS 为二选一，不存在双端口并存。环境变量清单见[环境变量](/advanced/env)。
 
-启用的连带影响：`req.secure` 为真后，认证 cookie 会带 `secure` 属性并由 httpOnly cookie 通道下发（而不是 HTTP 下的 Bearer 回退），详见[鉴权与权限模型](/advanced/auth)。单文件发行版的启动脚本会用 `-Https` / `https` 子命令自动带上该变量。
+启用的连带影响：`req.secure` 为真后，认证 cookie 会带 `secure` 属性并由 httpOnly cookie 通道下发（而不是 HTTP 下的 Bearer 回退），见[鉴权与权限模型](/advanced/auth)。单文件发行版的启动脚本会用 `-Https` / `https` 子命令自动带上该变量。
 
 ---
 
@@ -107,11 +107,11 @@ const keyPath  = process.env.SSL_KEY_PATH  || path.join(sslDir, 'key.pem');
 
 `start.bat https` 启动后，后端统一提供前端页面和 API：`https://localhost:3333`。WebRTC（屏幕共享、语音）在浏览器中要求 HTTPS 环境。
 
-## 自签证书提示"不安全"
+## 自签证书的不受信任提示
 
-`localhost` 与内网 IP 的自签证书会被浏览器标记不受信任，二选一：
+`localhost` 与内网 IP 的自签证书会被浏览器标记为不受信任，两种处理方式：
 
 - 将 `config/ssl/cert.pem` 导入客户端「受信任的根证书颁发机构」；
 - 使用域名或公网 IP 走 Let's Encrypt。
 
-Docker 部署不自动签发证书，HTTPS 建议前置 Nginx / Caddy 反代。IPv6 直连场景注意证书 SAN 需包含对应地址（Let's Encrypt 支持公网 IPv6）。
+Docker 部署不自动签发证书；HTTPS 宜前置 Nginx / Caddy 反代。IPv6 直连场景下证书 SAN 需包含对应地址（Let's Encrypt 支持公网 IPv6）。

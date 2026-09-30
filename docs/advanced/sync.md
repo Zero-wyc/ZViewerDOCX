@@ -4,13 +4,13 @@
 
 ## 房间数据结构与权威副本
 
-服务器持有房间状态的**权威副本**，分三层（详见[架构总览](/advanced/index)）：
+服务器持有房间状态权威副本，分三层（见[架构总览](/advanced/index)）：
 
 - **运行时副本** `RoomRuntimeState`（内存 Map）：影片列表、当前影片、播放状态、房主最近一次 `subtitle-update` 的字幕缓存（观众中途加入补发，不写库）。
 - **播放记忆** `PlaybackMemoryService`：内存缓存 + `PlaybackState` 表节流落盘（状态写入 2s 节流、心跳落盘 10s 节流），房主刷新后凭 `currentMovieId` 匹配同一影片恢复播放；每 30s 清理一次陈旧缓存（房主离线且最后更新超 10 分钟即删除）。
 - **持久化实体**：`Room`（roomId 为 8 位 nanoid、密码 bcrypt cost 10、`mode`、`shareMethod`、`streamKey`、审批开关、禁言/房管 JSON 数组、`lastAccessedAt`）与一对一的 `PlaybackState`。
 
-房主是否在线的判定是**双条件**：`hostSocketId` 非空 **且** `io.sockets.sockets.has(hostSocketId)`（`isHostOnline()`）——防止后端重启后旧 socket id 造成的误判。
+房主在线判定为双条件：`hostSocketId` 非空且 `io.sockets.sockets.has(hostSocketId)`（`isHostOnline()`），防止后端重启后旧 socket id 造成误判。
 
 ## 关键事件清单
 
@@ -38,13 +38,13 @@
 1. **事件绑定**（`useVideoEventBindings.ts`）：`play/pause` 防抖 100ms、`seeked` 防抖 300ms、`ratechange` 立即；`timeupdate` 不广播（进度完全走心跳）。
 2. **差分广播**（`useHostBroadcast.ts` + `state-merge.ts`）：与上次状态浅比较，`currentTime` 差 ≤2s 视为等价跳过；否则 `computeStateDiff` 生成增量，`emit('watch-together-state', {state, diff, seq})`，seq 自房主侧递增。
 3. **心跳**（`useHostHeartbeat.ts`）：每 **5s** 发 `host-heartbeat`；事件抑制期（观众 seek 会回灌房主 video 事件）发 `suppressed: true` 的存活心跳，观众只重置离线计时、不校正进度。抑制采用计数式租约（5 分钟自动过期防悬挂）。
-4. **服务端处理**：校验 isRoomHost + 房间模式 → 写播放记忆（节流落盘）→ 转发。`watch-together-control` 的处理有讲究：pause 时把 currentTime 凝固为推算值；seek 只改时间不改 isPlaying（避免观众端 seek 后暂停抖动）；rate 先推算当前进度再改倍速。
+4. **服务端处理**：校验 isRoomHost + 房间模式 → 写播放记忆（节流落盘）→ 转发。`watch-together-control` 的处理规则：pause 时把 `currentTime` 凝固为推算值；seek 只改时间不改 `isPlaying`（避免观众端 seek 后暂停抖动）；rate 先推算当前进度再改倍速。
 
 ## 观众端对齐算法
 
 观众端把「状态事件」与「心跳」职责分离：
 
-- **状态事件**（`useViewerStateSync.ts`）只负责离散字段：`sourceUrl` 变化才重建播放流（以 `state.currentTime` 为起点）、`isPlaying` 变化才 play/pause、`playbackRate` 变化才设倍速——**currentTime 永远不随状态事件设置**。seq 跳号检测（`payload.seq > lastSeq + 1`）触发丢弃增量、请求全量自愈。
+- **状态事件**（`useViewerStateSync.ts`）只负责离散字段：`sourceUrl` 变化才重建播放流（以 `state.currentTime` 为起点）、`isPlaying` 变化才 play/pause、`playbackRate` 变化才设倍速；`currentTime` 不随状态事件设置。seq 跳号检测（`payload.seq > lastSeq + 1`）触发丢弃增量、请求全量自愈。
 - **心跳驱动进度**（`useViewerHeartbeat.ts`），两阶段策略（`seek-strategy.ts`）：
 
 | 进度差 | 行为 |
@@ -66,12 +66,12 @@ seek 本身走统一入口 `executeSeek`（`seek-service.ts`）：目标在缓�
 3. 同意后房主操作本地 video → 走与普通操作相同的事件通道广播；申请者 pending 15s 未响应自动清除。
 4. 优化：5s 窗口内同目标 seek / 同类 pause / play 申请**合并为一条**（`viewerSocketIds` 数组），批量应答。
 
-注意实现细节：房主同意 pause/play 时会**主动操作本地 video 再应答**——否则房主 video 已是目标态、不再触发事件，观众端按钮状态不会更新。
+实现细节：房主同意 pause/play 时先操作本地 video 再应答；否则房主 video 已是目标态、不再触发事件，观众端按钮状态不会更新。
 
 ## 自主控制模式
 
 - 判定：观众收到 `host-disconnected` → 房主离线；收到 `sharer-ready` → 恢复。
-- 效果：`canControl = isHost || hostOffline`——离线期间观众直接控制**本地播放器**（方向键 ±5s 等），不经过服务器广播（避免多观众互相打架）；服务器心跳在本地被屏蔽，不覆盖观众操作。
+- 效果：`canControl = isHost || hostOffline`；离线期间观众直接控制**本地播放器**（方向键 ±5s 等），不经过服务器广播（避免多观众操作冲突）。服务器心跳在本地被屏蔽，不覆盖观众操作。
 - 音乐侧对应：观众 7s 未收到 `music:host-heartbeat` 判定离线，同样进入自主控制（见[一起听音乐管线](/advanced/music-pipeline)）。
 
 ## 房间生命周期
@@ -97,7 +97,9 @@ seek 本身走统一入口 `executeSeek`（`seek-service.ts`）：目标在缓�
 - **WebRTC**：信令 `signal-offer/answer/ice-candidate` 定向转发 + `viewer-ready`/`sharer-ready` 握手，逐观众链路天然独立。
 - **OBS 推流（stream-push）**：纯直播、无逐观众进度同步。「对齐」由 flv.js **追帧**实现：`liveBufferLatencyChasing: true`，最大延迟 1.5s、目标延迟 0.5s，多观众自动收敛到近实时；断流指数退避重连（1s→16s，最多 5 次），卡死检测（buffered 前沿停滞超 0.5s）时 seek 到 `bufferedEnd - 0.3`。推流码校验（`postPublish`）要求房间 active + 投屏模式 + stream-push 子模式，非法 `session.reject()`。
 
-## 常量速查（`sync-playback/constants.ts` 等）
+## 常量速查
+
+参考 `sync-playback/constants.ts` 等文件。
 
 | 常量 | 值 |
 |---|---|

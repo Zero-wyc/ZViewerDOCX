@@ -1,5 +1,7 @@
 # 架构总览
 
+本页汇总进程模型、Socket 事件注册模型、状态分层与设计约束；各子系统的实现细节见文末分区导航。
+
 ## 进程与端口
 
 ```
@@ -26,11 +28,11 @@ RTMP 3334 → Node Media Server → FLV 3335（仅容器/本机内部）
 连接鉴权在 `io.use` 中间件完成（`backend/src/index.ts`）：
 
 - `handshake.auth.agent === 'zcontrol-cli'` 直接放行并标记 `isCliAgent`（CLI 代理见 [ZViewerCLI 代理协议](/advanced/cli-protocol)）；
-- 其余连接按 **cookie 头 → `handshake.auth.token` → `handshake.query.token`** 顺序取 JWT 校验，失败拒绝握手——WebSocket 与 REST 共用同一套身份体系。
+- 其余连接按 **cookie 头 → `handshake.auth.token` → `handshake.query.token`** 顺序取 JWT 校验，失败拒绝握手；WebSocket 与 REST 共用同一套身份体系。
 
 ## 状态分层：内存权威副本 + 数据库节流落盘
 
-房间运行状态采用三层设计，这是理解同步行为的关键：
+房间运行状态采用三层设计：
 
 | 层 | 载体 | 特点 |
 |---|---|---|
@@ -58,12 +60,12 @@ actualCurrentTime = currentTime + (Date.now() - lastUpdatedAt) / 1000 × playbac
 | 音乐 | @neteasecloudmusicapienhanced/api（内嵌 HTTP 服务） |
 | CLI | Go（独立仓库 ZViewerCLI） |
 
-## 设计要点
+## 设计约束
 
 - **无原生模块**：sql.js 是 wasm 实现，单文件版可在任意平台直接运行，不需要编译环境；服务器端 FFmpeg 已整体移除，音视频转码全部前置到浏览器。
 - **配置集中**：全部状态（数据库、证书、上传、推流切片、JWT 密钥文件）在 `config/` 目录，更新不覆盖，备份这一个目录即可。
 - **浏览器承担计算**：字幕提取（MKV 流式 demux）、容器重封装、音轨转码都在浏览器端完成，服务器只做转发与解析，带宽和 CPU 压力集中在必要的流上。
-- **JWT 密钥自举**：环境变量 → `config/jwt-secrets.json` → 自动生成 64 位 hex 写回文件，三级兜底（`middleware/auth.ts` `loadOrCreateSecret`），首次启动零配置可用。
+- **JWT 密钥自举**：环境变量 → `config/jwt-secrets.json` → 自动生成 64 位 hex 写回文件，三级回退（`middleware/auth.ts` `loadOrCreateSecret`），首次启动无需配置。
 - **代理统一出口**：媒体代理、`/live` 反代、音频代理共用 `proxyHttpUpstream`（`services/proxy/http-proxy.ts`），统一处理 Range 有界分片、条件请求、断连销毁与流量日志。
 
 ## 分区导航
@@ -79,4 +81,4 @@ actualCurrentTime = currentTime + (Date.now() - lastUpdatedAt) / 1000 × playbac
 - [环境变量](/advanced/env)
 - [构建与更新机制](/advanced/build-update)
 
-想进一步了解目录结构、模块职责与完整运行流程 → [开发教程](/dev/)
+相关页面：[开发教程](/dev/)（目录结构、模块职责与完整运行流程）

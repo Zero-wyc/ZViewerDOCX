@@ -1,6 +1,6 @@
 # API 参考
 
-> 本文档面向开发者。除特别标注外，接口均返回 JSON `{ success: true, ... }`，管理接口需 `admin`/`root` 角色。
+> 本页为开发者参考。除特别标注外，接口均返回 JSON `{ success: true, ... }`，管理接口需 `admin`/`root` 角色。
 
 ---
 
@@ -8,11 +8,11 @@
 
 ### 鉴权三通道
 
-`extractAccessToken` 按 **query `token` → cookie `access_token` → `Authorization: Bearer`** 顺序取 token（详见[鉴权模型](/advanced/auth)）：
+`extractAccessToken` 按 **query `token` → cookie `access_token` → `Authorization: Bearer`** 顺序取 token（见[鉴权模型](/advanced/auth)）：
 
 - 浏览器 REST：`credentials: 'include'`，HTTPS 走 httpOnly cookie，HTTP 走本地缓存的 Bearer（无需额外处理，前端 `apiFetch` 已封装）；
 - 媒体地址（`<video>` / `<audio>` / MSE / hls.js）：无法带自定义头，前端对本域 `/api/` URL 自动附加 `?token=`；
-- 脚本/第三方调用：建议 `Authorization: Bearer <access>`，过期后 `POST /api/auth/refresh`（cookie 或 body）换发 access。
+- 脚本/第三方调用：可用 `Authorization: Bearer <access>`，过期后 `POST /api/auth/refresh`（cookie 或 body）换发 access。
 
 ### 响应与流式
 
@@ -31,7 +31,7 @@
 
 ### 限流
 
-登录 15 分钟 20 次/IP；改密 1 分钟 3 次/用户；登录失败锁定（可选开启）5 次锁 15 分钟。代理类接口需登录，防带宽滥用。
+登录 15 分钟 20 次/IP；改密 1 分钟 3 次/用户；登录失败锁定（可选开启）5 次锁 15 分钟。代理类接口需登录，防止带宽滥用。
 
 ---
 
