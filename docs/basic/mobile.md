@@ -6,15 +6,12 @@
 
 ## 支持的平台
 
-| 平台 | 状态 | 说明 |
-|---|---|---|
-| Android | 正式发布 | 功能最完整，内置 B 站登录与本机 Go 播放代理 |
-| HarmonyOS | 正式发布 | 与 Android 共用同一套前端代码，功能对齐 |
-| iOS | 开发中 | 独立的 Expo / React Native 工程，已接入服务端登录、房间导航、聊天与基础单轨播放，尚未覆盖 B 站代理、语音与完整媒体能力 |
+| 平台 |
+|---|
+| Android |
+| HarmonyOS |
 
-当前双端版本为 1.5.0，对应服务端 v4.2.1。Android 最低要求 Android 7.0 / API 24，HarmonyOS 最低要求 6.1 / API 23，两端都只提供 64 位版本。
-
-达到最低系统版本只说明应用能装能跑。具体媒体格式能否播放，还取决于设备的解码能力，也取决于系统 WebView（Android）或 ArkWeb（HarmonyOS）的版本。
+Android 最低要求 Android 7.0 / API 24，HarmonyOS 最低要求 6.1 / API 23，两端都只提供 64 位版本。
 
 ## 获取安装包
 
@@ -25,10 +22,6 @@
 | Android | `ZViewer-Android-<版本号>-release.apk` |
 | HarmonyOS | `ZViewer-HarmonyOS-<版本号>-release.hap` |
 | 源码 | `ZViewer-client-<版本号>-source.zip` |
-
-Android 安装时按系统提示允许对应来源安装应用。正式版包名是 `com.zviewer.mobile`，调试版使用独立包名 `com.zviewer.mobile.debug`，两者可以并存。HarmonyOS 的 HAP 需要在开发者模式下安装，以华为官方说明为准。
-
-安装前有两点需要注意。不同包名或不同签名的版本无法互相覆盖安装，遇到安装被拒时先记录服务器地址与设置，确认不再需要后再卸载旧包，因为卸载会清除本地数据。另外，本仓库不包含发布密钥，自行构建的签名包不保证能覆盖安装官方发布包。
 
 ## 连接服务器
 
@@ -72,44 +65,9 @@ B 站 Cookie 在 Android 上经 Keystore（系统提供的密钥存储服务）�
 - 一起看全屏时，双击左三分之一后退 15 秒，双击右三分之一前进 15 秒，范围限制在 0 到时长之间。
 - 一起听：只有在纯净模式的全屏视频上才启用同一套双击手势，普通音乐界面不触发。全屏单击唤出退出按钮，按钮 3 秒后自动隐藏，仍可用按钮、Esc 或系统返回键退出。
 
-系统判定一次双击需要落在同一区域、触点相邻且间隔不超过 320 毫秒；拖动、长按与取消都不算双击。观众的手势仍然走播放、暂停、跳转申请，由房主审批，不会绕过房间规则。
-
 ## 后台播放
 
 两端都接入了系统媒体会话，锁屏和通知栏能显示影片或歌曲信息、播放状态与解码后的封面，支持系统播放、暂停、跳转以及可用的切歌操作。
-
-一起听会同步网易云歌词与 B 站 AI 字幕。HarmonyOS 发布完整歌词与当前行；Android 通过兼容性元数据与通知副标题发布歌词，具体能展示到什么程度由系统媒体控件决定。
-
-保活策略按播放状态生效：播放时申请唤醒锁或音频连续任务，暂停与退出时释放。应用离开播放器或宿主销毁后，相关会话与资源一并释放。
-
-## 显示与触控
-
-字幕默认字号在手机上为 12px，短边达到 600 CSS px 的平板为 15px，两种都可手动调整。
-
-弹幕在手机上默认开启「随屏幕缩放」，字号会随播放区域一起变化，可以在弹幕设置里关闭，关闭后的选择会保留。网页版的默认值不受影响。
-
-应用使用与网页版一致的主题系统，深浅模式、壁纸与自定义外观在手机端同样生效。
-
-## 网络要求
-
-推荐使用 HTTPS。为了兼容局域网部署，应用允许 HTTP 与混合内容，因此不要在不可信网络里用明文连接。
-
-服务端或反向代理需要放行客户端来源的 API 请求与 Socket.IO 连接。这一点与网页版相同。
-
-## 从源码构建
-
-仓库是共享前端加多平台原生宿主的结构：产品代码在根目录 `src/`，平台能力统一经 `src/platform/` 调用，业务模块不直接依赖 Android 或 Capacitor。
-
-推荐使用 Node.js 24、Go 1.26.8、JDK 21，以及 Android SDK Platform 36 / Build Tools 36 和 NDK r30。Gradle Wrapper 已随仓库提供。
-
-```sh
-npm ci
-npm run build          # 构建共享前端
-npm run android:sync   # 同步前端资源到 Android 工程
-npm run harmony:web    # 构建并同步到 HarmonyOS 工程
-```
-
-正式签名包需要从仓库外注入 `ZVIEWER_KEYSTORE`、`ZVIEWER_STORE_PASSWORD`、`ZVIEWER_KEY_ALIAS`、`ZVIEWER_KEY_PASSWORD` 四个环境变量，再执行 release 构建。缺少签名配置时 release 构建会直接失败，不会把未签名包当成正式包。更完整的构建、签名与验收流程见仓库内的维护文档。
 
 ## 常见问题
 
@@ -125,18 +83,9 @@ npm run harmony:web    # 构建并同步到 HarmonyOS 工程
 
 手机端不提供屏幕采集，只能观看他人发起的共享。需要发起共享时请使用网页版。
 
-### 后台播放一段时间后停止
-
-先检查系统的电池优化或后台限制是否杀掉了应用。两端都已按播放状态申请后台运行权限，但厂商的省电策略可能仍会干预，必要时把应用加入后台运行白名单。
-
-### 语音没有声音或无法加入
-
-在系统设置里确认应用已获得麦克风权限。折叠面板、切换标签或更换房间模式不会结束通话，若已掉线，退出语音后重新加入即可。
-
 ## 相关链接
 
 - [ZViewerAPP 仓库](https://github.com/Zero-wyc/ZViewerAPP)
 - [下载安装包](https://github.com/Zero-wyc/ZViewerAPP/releases)
 - [更新记录](https://github.com/Zero-wyc/ZViewerAPP/blob/main/CHANGELOG.md)
 - [跨平台移植说明](https://github.com/Zero-wyc/ZViewerAPP/blob/main/PORTING.md)
-- [双端维护与发布流程](https://github.com/Zero-wyc/ZViewerAPP/blob/main/docs/mobile-release-maintenance.md)
