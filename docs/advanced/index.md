@@ -92,5 +92,3 @@ actualCurrentTime = currentTime + (Date.now() - lastUpdatedAt) / 1000 × playbac
 - [REST API 参考](/advanced/api)
 - [环境变量](/advanced/env)
 - [构建与更新机制](/advanced/build-update)
-
-相关页面：[开发教程](/dev/)（目录结构、模块职责与完整运行流程）

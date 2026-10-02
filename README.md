@@ -8,6 +8,7 @@ ZViewer —— 多人同步观影、追番与远程共享平台。
 
 | 变更 | 说明 |
 |------|------|
+| 📱 手机端客户端 | 独立仓库 ZViewerAPP：Android 与 HarmonyOS 正式版 1.5.0，内置 B 站扫码登录与本机播放代理，接入系统播放控件、后台播放与系统歌词，支持一起看全屏双击跳转手势；本地安装说明见[手机端 App](/basic/mobile) |
 | 🎵 一起听音乐模块 | 全新房间化音乐模块：网易云 + B站 双音源同步听歌，复刻 Hydrogen 歌词播放页（真实频谱可视化、音质角标、翻译/罗马音、评论区、弹幕），观众可申请切歌 / 调进度，CLI 本地代理支持高画质 |
 | 🎶 双源播放列表 | 网易云歌单 / 每日推荐 / FM 与 B站音乐分区 / 搜索 / 收藏双源独立队列，房间内实时同步；清空列表立即停声，播放全房间统一 |
 | ⏭️ B站推荐续播 | 顺序播放到队列末尾点「下一首」时自动拉取 3 首相关推荐入队续播，可随时关闭 |
@@ -42,13 +43,14 @@ ZViewer —— 多人同步观影、追番与远程共享平台。
 
 ## 文档站点
 
-本文档站基于 VitePress 构建，分为三个分区：
+本文档站基于 VitePress 构建，分为两个分区：
 
 **基础教程**（[/basic/](/basic/)）— 安装部署与功能使用，语言精简：
 
 - [快速上手](/basic/) — 下载、启动、登录、建房、加影片
 - [安装与部署](/basic/install) — 单文件 / 源码 / Docker
 - [功能说明](/basic/features) — 全部功能一览与使用
+- [手机端 App](/basic/mobile) — Android / HarmonyOS 客户端下载、安装与平台差异
 - [ZViewerCLI](/basic/cli) — 本地代理客户端
 - [管理后台](/basic/admin)、[内网穿透](/basic/network)、[常见问题](/basic/faq)
 
@@ -62,15 +64,6 @@ ZViewer —— 多人同步观影、追番与远程共享平台。
 - [主题系统实现](/advanced/theme-system) — Monet 色板、颜色强度、文字对比度作用域
 - [HTTPS 证书](/advanced/https) — 签发方式选择、ACME 流程、后端启用
 - [鉴权与权限模型](/advanced/auth)、[REST API 参考](/advanced/api)、[环境变量](/advanced/env)、[构建与更新](/advanced/build-update)
-
-**开发教程**（[/dev/](/dev/)）— 面向二次开发者，讲清代码怎么组织、请求怎么跑：
-
-- [总览与分层设计](/dev/) — 技术选型、设计基调、前后端分层图与依赖规则
-- [目录结构](/dev/structure) — 仓库根 / 后端 / 前端三层目录职责，开发环境与端口
-- [后端架构](/dev/backend) — 装配顺序、Socket 注册模型、领域模块与三层状态、服务 / 路由 / 数据层
-- [前端架构](/dev/frontend) — Provider 树、鉴权引导、Socket 单例、状态分层、播放引擎抽象
-- [运行流程](/dev/runtime) — 启动初始化、五条关键执行链路、房间生命周期、数据流转总览
-- [二次开发指南](/dev/guide) — 新增事件 / 接口 / 引擎 / 模块的步骤，常见陷阱与调试手段
 
 English documentation is available at [/en/](/en/) (based on the previous structure).
 

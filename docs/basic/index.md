@@ -54,6 +54,7 @@ start.bat start #也可以直接双击start.bat文件
 |---|---|
 | [安装与部署](/basic/install) | 单文件 / 源码 / Docker / 数据持久化 |
 | [功能说明](/basic/features) | 全部功能的使用说明 |
+| [手机端 App](/basic/mobile) | Android / HarmonyOS 客户端下载、安装与平台差异 |
 | [ZViewerCLI](/basic/cli) | 本地代理客户端安装与使用 |
 | [管理后台](/basic/admin) | 用户审核、房间管理、系统设置 |
 | [网络连接与内网穿透](/basic/network) | FRP / ZeroTier / IPv6 |

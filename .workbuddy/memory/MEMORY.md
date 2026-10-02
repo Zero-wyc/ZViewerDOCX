@@ -1,14 +1,30 @@
 # ZViewerDOCX 项目长期笔记
 
-VitePress 1.6.3 文档站（`zviewer-docs`），源文件在 `docs/`，构建产物 `dist/`（build 时生成，git 忽略；但 `dist/404.html`、`dist/en/**`、`dist/index.html`、`dist/hashmap.json` 历史上被强制跟踪，`git add -A` 会带上它们）。
+VitePress 1.6.3 文档站（`zviewer-docs`），源文件在 `docs/`，构建产物 `dist/`（`outDir: '../dist'`，即仓库根的 `dist/`）。`.gitignore` 里有 `dist/`，但根 `dist/` 下 76 个文件历史上被强制跟踪，`git add -A` 会带上它们。另有一个 2026-08-04 的老构建产物 `docs/dist/`（提交 `e467330 修改产物输出目录`）也被跟踪，已过期，别把它当成当前产物。
+
+## 当前分区（2026-10-02 起）
+
+只有**两个**中文分区：
+
+- `/basic/` 基础教程：快速上手 / 安装与部署 / 功能说明 / **手机端 App** / ZViewerCLI / 管理后台与权限 / 网络连接与内网穿透 / 常见问题
+- `/advanced/` 拓展教程：架构总览 / 房间同步逻辑 / 视频源与 API 逻辑 / 一起听音乐管线 / CLI 代理协议 / 主题系统实现 / HTTPS 证书 / 鉴权与权限模型 / REST API 参考 / 环境变量 / 构建与更新机制
+
+**开发教程（`docs/dev/`）已被用户删除**（提交 `8544508 u`，2026-10-02），不要再重建，也不要往 `/dev/` 加链接。英文站 `docs/en/` 是独立结构（guide / features / admin / cli / dev），未动。
 
 ## 协作注意
 
-用户会直接手动编辑 `docs/**` 并自行提交（例如 `3c06518 Update network.md` 改写了 `docs/basic/network.md` 的第 4 步；`docs/basic/index.md` 第 3 行也被手动改过）。因此每次动文件前先看工作区状态，不要把用户的手动改动当成自己的改动去回退或重写。
+用户会直接手动编辑 `docs/**` 并自行提交，例如：
+
+- `3c06518 Update network.md` 改写 `docs/basic/network.md` 第 4 步
+- `8544508 u` 删除整个 `docs/dev/` 并改了 `docs/index.md`
+- `bb9f024 up`、`6abdfa7 up` 分别改了 basic 五页与 advanced 两页
+- `docs/basic/index.md` 第 3 行、第 15 行、第 62 行也被手动改过
+
+因此每次动文件前先看工作区状态，不要把用户的手动改动当成自己的改动去回退或重写。
 
 ## 文档语言风格：《MDN 中文写作规范》（2026-09-30 确立）
 
-三个中文分区（`docs/basic/`、`docs/advanced/`、`docs/dev/`）统一按 MDN 风格撰写。曾经的「冷中性/去人称」版本已废弃，不要再退回。
+两个中文分区统一按 MDN 风格撰写。曾经的「冷中性/去人称」版本已废弃，不要再退回。
 
 规则：
 

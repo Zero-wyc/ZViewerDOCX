@@ -71,7 +71,6 @@ export default defineConfig({
         nav: [
           { text: '基础教程', link: '/basic/', activeMatch: '/basic/' },
           { text: '拓展教程', link: '/advanced/', activeMatch: '/advanced/' },
-          { text: '开发教程', link: '/dev/', activeMatch: '/dev/' },
           { text: 'GitHub', link: 'https://github.com/Zero-wyc/ZViewer' },
         ],
         sidebar: {
@@ -82,6 +81,7 @@ export default defineConfig({
                 { text: '快速上手', link: '/basic/' },
                 { text: '安装与部署', link: '/basic/install' },
                 { text: '功能说明', link: '/basic/features' },
+                { text: '手机端 App', link: '/basic/mobile' },
                 { text: 'ZViewerCLI 本地代理', link: '/basic/cli' },
                 { text: '管理后台与权限', link: '/basic/admin' },
                 { text: '网络连接与内网穿透', link: '/basic/network' },
@@ -104,19 +104,6 @@ export default defineConfig({
                 { text: 'REST API 参考', link: '/advanced/api' },
                 { text: '环境变量', link: '/advanced/env' },
                 { text: '构建与更新机制', link: '/advanced/build-update' },
-              ],
-            },
-          ],
-          '/dev/': [
-            {
-              text: '开发教程',
-              items: [
-                { text: '总览与分层设计', link: '/dev/' },
-                { text: '目录结构', link: '/dev/structure' },
-                { text: '后端架构', link: '/dev/backend' },
-                { text: '前端架构', link: '/dev/frontend' },
-                { text: '运行流程', link: '/dev/runtime' },
-                { text: '二次开发指南', link: '/dev/guide' },
               ],
             },
           ],
