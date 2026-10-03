@@ -17,13 +17,19 @@ proxy_set_header Upgrade $http_upgrade;
 proxy_set_header Connection "upgrade";
 ```
 
+## 语音聊天连不上
+
+语音聊天基于 WebRTC（浏览器的实时音视频通道），媒体流默认走 `3333/udp`，服务器防火墙需放行该端口。UDP 被拦截时，可配置内置的 TURN/TLS 中继（TCP 5349）作为兜底通道，配置方法见[环境变量](/advanced/env)中的 `LIVEKIT_TURN_*` 三项。
+
 ## WebRTC 无法建立连接
 
-WebRTC 的 `getUserMedia` 要求 HTTPS 访问，生产环境需配置 SSL 证书。若双方处于严格 NAT 之后，可能需要部署 TURN 服务器（如 coturn）。
+WebRTC 的 `getUserMedia`（浏览器获取麦克风/摄像头的接口）要求 HTTPS 访问，生产环境需配置 SSL 证书。
 
 ## 数据库说明
 
 后端使用 TypeORM + sql.js（wasm 版 SQLite）持久化，纯 JS 实现、无原生模块；单文件 exe 版可在任意平台直接运行，无需编译。数据库文件为标准 SQLite 格式（`config/dev.sqlite`），可用常规 SQLite 工具查看。
+
+写入采用原子写回（先写临时文件再替换，避免断电产生半截文件），启动时自动滚动备份数据库，文件损坏时可用备份自愈。
 
 支持可选 PostgreSQL，配置方式见[环境变量](/advanced/env)。
 

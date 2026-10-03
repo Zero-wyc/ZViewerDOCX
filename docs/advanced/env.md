@@ -20,12 +20,28 @@ ZViewer 的配置分两类：启动时读取的环境变量，以及运行时可
 | `JWT_REFRESH_EXPIRES_IN` | Refresh Token 有效期 | `30d`（guest 恒为 1h / 7d） |
 | `RTMP_PORT` | RTMP 推流端口 | `3334` |
 | `HTTP_FLV_PORT` | HTTP-FLV 拉流端口（内部，经 `/live` 反代） | `3335` |
+| `STREAM_PUSH_ENABLED` | 设为 `0` 时完全不启动推流服务（NMS），不监听 3334/3335 | 开启 |
 | `SERVER_HOST` | 生成 OBS 推流地址时使用的主机名 | 空（取请求 Host 去端口） |
 | `ENABLE_LOGIN_LOCK` | 启用登录失败锁定（5 次锁 15 分钟） | 关闭 |
 
 单文件版的配置写入 `config/` 目录下的环境文件；Docker 通过 `-e` 或 compose `environment` 注入。
 
 **JWT 密钥自举**：未设环境变量时读 `config/jwt-secrets.json`（长度 ≥32 才采信），仍无则自动生成 64 位 hex 写回文件。首次启动无需配置；生产环境固定密钥可避免重启后登录态失效。
+
+## 语音聊天（LiveKit）
+
+语音聊天由内嵌的 LiveKit 服务承载（LiveKit 是开源的 WebRTC 实时通信服务）。默认无需任何配置：信令经主端口的 `/rtc` 路径反代，媒体流走 `3333/udp`，公网 IP 经 LiveKit 原生 STUN（一种通过向外部服务查询来自动发现自身公网地址的机制）自动发现。以下变量用于特殊网络环境的调整。
+
+| 变量 | 说明 | 默认值 |
+|---|---|---|
+| `LIVEKIT_EXTERNAL` | 设为 `1` 时跳过内嵌服务，连接外置 LiveKit | `0` |
+| `LIVEKIT_BIND` | 内嵌服务的监听地址 | `::`（双栈） |
+| `LIVEKIT_NODE_IP` | ICE 广播地址（告知客户端向哪个地址建立媒体连接）。留空时自动启用 STUN 外部 IP 发现（要求服务器可出网）；NAT 复杂环境可手动指定公网 IP | 空（自动） |
+| `LIVEKIT_TURN_DOMAIN` | TURN/TLS 域名。与下面两项证书同时设置时，启用 TCP 5349 兜底中继，供 UDP 被拦截的网络使用；域名寻址不依赖公网 IP | — |
+| `LIVEKIT_TURN_CERT` | TURN TLS 证书路径（必须正式证书，自签证书不被浏览器 WebRTC 信任） | — |
+| `LIVEKIT_TURN_KEY` | TURN TLS 私钥路径 | — |
+
+UDP 直连与 TURN 中继并行尝试：TURN 只作兜底，不影响直连成功时的低延迟。
 
 ## 前端构建
 

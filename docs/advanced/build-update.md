@@ -6,15 +6,15 @@
 
 构建由 `build-all.js` 完成，它把前后端编译成单个平台可执行文件。
 
-`build-all.js` 使用 esbuild 打包并把资源内联：后端被打包成一个可执行二进制（内含 wasm sql.js 与内嵌的 NCM 服务依赖），前端静态资源随后端一起分发。运行时由同一个进程同时提供 HTTP、WebSocket 与静态托管。
+`build-all.js` 使用 esbuild 打包（pkg 打包目标为 node26）并把资源内联：后端被打包成一个可执行二进制（内含 wasm sql.js 与内嵌的 NCM 服务依赖），前端静态资源随后端一起分发。构建时还会下载 LiveKit 伴生二进制随包分发，语音聊天开箱即用。运行时由同一个进程同时提供 HTTP、WebSocket 与静态托管，并按需拉起 livekit-server 子进程。
 
 各平台的产物如下。
 
 | 平台 | 产物 |
 |---|---|
-| Linux | `zviewer-backend`、`zviewer-cert`、`start.sh` → `zviewer-linux-x64.tar.gz` |
-| Windows | `zviewer-backend.exe`、`zviewer-cert.exe`、`start.bat` → `zviewer-windows-x64.zip` |
-| Docker | `zerowyc0721/zviewer:latest`（Linux 单文件镜像） |
+| Linux | `zviewer-backend`、`zviewer-cert`、`livekit-server`、`start.sh` → `zviewer-linux-x64.tar.gz` |
+| Windows | `zviewer-backend.exe`、`zviewer-cert.exe`、`livekit-server.exe`、`start.bat` → `zviewer-windows-x64.zip` |
+| Docker | `zerowyc0721/zviewer:latest`（Linux 单文件镜像，内嵌 LiveKit） |
 
 `zviewer-cert` 是配套的证书工具（用于生成和安装自签 HTTPS 证书），详见 [HTTPS 证书](/advanced/https)。
 
@@ -27,6 +27,8 @@
 | push `main` | `0.0.0-dev.<sha>`（预发布） | 双平台 artifact + Docker Hub |
 | tag `v*` | 正式版 | GitHub Release（双平台压缩包 + Docker） |
 | 手动触发 | `0.0.0-manual` | artifact |
+
+CI 下 LiveKit 下载失败会直接硬失败，保证每个构建产物都包含完整的语音能力。
 
 ## 自动更新
 

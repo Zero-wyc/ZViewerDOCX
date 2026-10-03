@@ -81,14 +81,16 @@ B站 API 的公共请求封装为：Chrome 120 UA、`Referer/Origin: https://www
 
 ### 引擎选择（`engine-selector.ts`）
 
-引擎按固定优先级挑选：`format==='dash' || audioUrl` → **videojs10-dash**（video.js 10 当状态层，dash.js 5.2.0 当执行层，自研 MPD 构建包装 m4s）→ `hls` → `flv` → `shouldUsePlaysVideo()` 为真时用 **playsvideo** → 否则用 **direct**（`selectDirectEngine()`）。下表给出各典型场景的判定依据。
+引擎按固定优先级挑选：`format==='dash' || audioUrl` → **videojs10-dash**（video.js 10 当状态层，dash.js 5.2.0 当执行层，自研 MPD 构建包装 m4s）→ `hls` → `flv` → `shouldUsePlaysVideo()` 为真时用 **playsvideo** → 否则用 **videojs10**（直链引擎，`selectDirectEngine()`；v10 headless store 接管播放状态层，加载路径复用 direct 管线。localStorage 设 `zviewer-vjs10-engine = '0'` 可回落经典 direct 引擎）。下表给出各典型场景的判定依据。
 
 | 场景 | 引擎 | 判定 |
 |---|---|---|
-| MP4 / WebM / MOV | direct | 原生可播，30s metadata 超时 |
+| MP4 / WebM / MOV | videojs10 | 原生可播，30s metadata 超时 |
 | AVI / TS / WMV | playsvideo | 浏览器完全无法原生打开，必须重封装 |
-| MKV | 视 `mkvFastPath` | 编解码原生友好时先直连，失败回退管线 |
+| MKV | playsvideo | 一律交给 playsvideo：浏览器对 MKV 的原生支持仅限 H.264/AAC 组合，且 DTS/AC3 等音轨需要转码 |
 | DTS / AC3 / EAC3 / TrueHD 音轨 | playsvideo | `needsBrowserTranscode` 判定，浏览器端转 AAC |
+
+playsvideo 的唯一门控是影片级「浏览器转码引擎」开关（添加影片时的 `playsvideoEnabled`）。开关关闭即强制原生直连播放，原生失败不回退管线；开关未设置或缺省时，只要浏览器具备运行条件（MSE + Worker）即按上表生效。
 
 - **playsvideo 管线**：mediabunny 流式 demux（Range 随机读取）→ 关键帧对齐分段计划 → 视频直通重封装或音频按需转码（AC3/EAC3/DTS/FLAC/MP3/Opus → AAC）→ fMP4 分段加 m3u8 → hls.js 按取段。取流 URL **必须同源**，跨域一律包装 `/api/stream/proxy?url=`，否则既带不了防盗链头，也过不了 CORS。准备超时 60s。
 - **服务器零依赖**：转码核心随前端资源分发（专用 ffmpeg 构建约 1.9MB），服务器不需要 FFmpeg。
@@ -103,7 +105,7 @@ B站 API 的公共请求封装为：Chrome 120 UA、`Referer/Origin: https://www
 前端自研了 `MatroskaDemuxer` 做流式解复用（`lib/mkv/`），没有用 ffmpeg.wasm——后者必须整文件载入，且上限约 2GB。
 
 - 先做头部 4MB Range 预取，收齐 Tracks 元素。≤512MB 的文件全量顺序扫描；更大的文件走**稀疏提取**：Cues 锚点分段、按元素 size 链前进、音视频负载按字节算术跳过，5GB 级片源只需传输约 10% 的字节。稀疏窗口 64KB（实测 12 并发会使代理失效，因此限制为 2 并发），worker 按「距当前播放位置最近」的优先级选锚点，即 seek 感知。
-- 支持文本轨 SRT/ASS/SSA/WEBVTT；PGS/VOBSUB 位图轨标记为不支持。
+- 支持文本轨 SRT/ASS/SSA/WEBVTT；PGS 位图轨（HDMV PGS，Blu-ray 常用的图形字幕）由自研 `pgs-decoder.ts` 解码调色板 RLE 位图后按时间轴渲染为图片；VOBSUB 位图轨仍不支持。
 - Emby/Jellyfin 的内嵌字幕走后端 `/embedded-tracks` + `/embedded-extract`（按扩展名路由转封装）。外挂字幕搜索覆盖 webdav/openlist/ftp/server-files 四个源，文件上限 2MB。
 
 ### B站 AI 字幕
@@ -121,12 +123,13 @@ B站 API 的公共请求封装为：Chrome 120 UA、`Referer/Origin: https://www
 - **B站官方 XML**：`x/v1/dm/list.so?oid=<cid>`，用正则解析 `<d p="...">` 属性段（time/mode/size/color...），XML 实体手动反转义。前端按 mode 映射到滚动、顶部、底部轨道。
 - **第三方聚合**：provider 注册表包含 bilibili-video / bilibili-bangumi / 巴哈姆特 / 弹弹play。搜索时把关键词生成「原文 + 繁体 + 简体」三个变体并行请求，再去重排序。`/fetch` 的 `playbackParams` 必须原样回传，弹弹play 缺 episodeId 会报错。
 - **渲染**（`danmakuEngine.ts`，基于 danmaku 库）：字号 = 用户基准 × B站 size 比例 × 屏幕比例（0.5~1.5 自适应）。屏蔽支持关键词、类型（滚动/固定/高级/彩色）两个维度，屏蔽或样式变更后清空重载。实时弹幕与屏蔽词经 Socket 跨端同步（`RoomDanmakuMeta` 实体）。
+- **本地导入**（`localImport.ts`，纯前端解析）：弹幕轨道卡片支持导入本地文件，格式为 B站 XML / B站 JSON / dandanplay JSON，解析结果作为一条独立弹幕轨道挂载，不经过服务器。
 
 ## OBS 推流与 B站下载
 
 投屏的推流入口和 B站下载都建立在 Node Media Server 与同一套推流校验之上。本节按推流服务、OBS 配置、B站下载三部分说明。
 
-- **Node Media Server**：RTMP 监听 3334（`chunk_size: 60000, gop_cache: true, ping: 30`），HTTP-FLV 监听 3335，由主端口 `/live` 反代。推流校验在 `postPublish` 业务层完成，要求路径为 `/live/<streamKey>`，且房间 active、投屏模式、stream-push 子模式。推流和断流事件广播 `stream-status {live|offline}`；即使 DB 查询失败也不漏广播，靠活跃会话 Map 兜底。
+- **Node Media Server**：RTMP 监听 3334（`chunk_size: 60000, gop_cache: true, ping: 30`），HTTP-FLV 监听 3335，由主端口 `/live` 反代。环境变量 `STREAM_PUSH_ENABLED=0` 时完全不启动 NMS，3334/3335 不监听，不用推流模式的部署可借此减少端口暴露。推流校验在 `postPublish` 业务层完成，要求路径为 `/live/<streamKey>`，且房间 active、投屏模式、stream-push 子模式。推流和断流事件广播 `stream-status {live|offline}`；即使 DB 查询失败也不漏广播，靠活跃会话 Map 兜底。
 - **OBS 配置一键下载**：`GET /api/stream-push/obs-config/:roomId` 生成 OBS 场景集合 JSON（rtmp_custom）。没有 streamKey 时会自动生成。
 - **server-files B站下载**（仅 root）：走 `preferMp4 + skipCdnCheck`。DASH 分离流需要服务器 FFmpeg 合并，而服务器端 FFmpeg 已经移除；B站 MP4 接口本身又硬限 720P。因此 MP4 模式最高只有 720P，高画质下载要走 CLI 模式。进度以 NDJSON 输出（每 2% 或 512KB 回调一次），失败自动清理不完整文件，VIP 档位做服务端强校验以防绕过。
 

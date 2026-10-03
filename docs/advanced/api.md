@@ -170,6 +170,8 @@
 | GET | `/stream?songId=&level=&roomId=&direct=` | 音频流（降级链 + 凭证回退 + SSRF 防护） | 可选鉴权 |
 | GET | `/song-quality?songId=` | 音质元数据（15 分钟缓存） | 登录 |
 | GET | `/login/status` | 网易云登录态（含会员判定） | 登录 |
+| GET | `/ncm-cookie` | 返回当前用户的网易云 Cookie 串（个人中心「复制 Cookie」） | 登录 |
+| POST | `/ncm-cookie-login` | 粘贴 Cookie 登录（提交时校验 MUSIC_U 登录态） | 登录 |
 | POST | `/logout` | 清除网易云凭证 | 登录 |
 | POST | `/cloud/upload` | 云盘上传（流式转发） | 登录 |
 

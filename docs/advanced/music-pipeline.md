@@ -29,6 +29,7 @@
 
 - **通用转发**：只放行 GET/POST。服务端自动注入当前用户持久化的网易云 Cookie（`NcmCredential` 表按 userId 隔离，游客不落库），并**剥离 query/body 中的 `cookie` / `noCookie` 参数**，防止客户端伪造登录态。
 - **扫码登录路径**（`/login/qr/key|create|check`）**不注入旧凭据**。网易云以请求携带的 cookie 判定登录态，带上过期的 MUSIC_U 会让二维码轮询异常（800 循环），导致扫码无效。check 成功（803）响应里的 Set-Cookie 会正常持久化，并解析 profile（昵称/头像/vipType）。
+- **Cookie 登录**（`/api/music/ncm-cookie-login`）：个人中心支持直接粘贴网易云 Cookie 登录（仿 B站交互）。提交时服务端先校验 MUSIC_U 是否对应有效登录态，再持久化并同步昵称/头像缓存；过期或错误的 Cookie 返回 400。`GET /api/music/ncm-cookie` 返回 `MUSIC_U=xxx; __csrf=yyy` 格式的 Cookie 串，供「复制 Cookie」把登录态迁移到其他设备或备份。
 - Cookie 持久化的判定：Set-Cookie 含 `music_u`，或名称含 `csrf`。按 cookie 名去重合并，新值覆盖旧值。
 - VIP 归一：`/vip/info` 兜底后，10 表示 VIP、11 表示 SVIP；黑胶、音乐包、PLUS 三档会员对象也会参与有效期判定。
 - 上游返回 3xx 时不跟随，改以 `{ code: 'REDIRECT', location }` 回传给前端。
@@ -106,7 +107,15 @@ B站单排序最多 50 页，`numResults` 封顶 1000。后端把 **4 个排序�
 
 ### 视频背景解析链（`useMusicVideoBackground.ts`）
 
-CLI 开启且代理在线时，背景走 CLI 的高画质 DASH（qn=0 表示跟随账号默认，非大会员已选会员档时自动回落）；否则回退到服务器的 720P MP4（`preferMp4: true`）。B站音频直链缓存 **2 小时**（直链本身 1~4 小时过期）。
+背景画质由 CLI 状态与设置共同决定，解析按以下优先级进行。
+
+| 前提 | 走的链路 | 清晰度 |
+|---|---|---|
+| CLI 开启且本地代理已连接 | CLI DASH 双轨 | 分辨率选择指定档，`qn=0` 表示跟随账号默认（非大会员已选会员档时自动回落） |
+| CLI 开启但代理未连接 | 服务器 MP4 直链（`preferMp4`，不回退 DASH） | 固定 720P |
+| CLI 关闭 | 「服务器 DASH 解析模式」设置决定走服务器 DASH 双轨或 MP4 直链 | DASH 路径同上按分辨率选择；MP4 固定 720P |
+
+分辨率选择（qn 参数）对 CLI DASH 与服务器 DASH 两条链路均生效；MP4 直链路径忽略该设置。B站音频直链缓存 **2 小时**（直链本身 1~4 小时过期）。
 
 - **可见性门控**：门控（gate）指决定某个功能是否启用的判断条件；可见性门控判断的就是画面是否已经可播。视频元素要等到 `canplay/playing`（首帧可播）才淡入，未就绪期间透出封面模糊背景——URL 就绪不等于画面就绪。
 - **进度同步**：由 1s interval 命令式驱动。漂移 >1.5s 时先去抖（350ms）再 seek，并进入追赶模式（`rate = 1 + drift/4`，夹在 0.6~1.5，误差 ≤0.35s 后恢复原速）；`readyState < 3` 时跳过校正，防止 DASH 连续 seek 造成缓冲风暴。DASH 的时长必须显式传给引擎：容器为 mvvh 时时长读出来是 0，缺失时 `video.duration` 无效，进度同步会全部失效。
