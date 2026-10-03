@@ -1,6 +1,6 @@
 # ZViewerDOCX 项目长期笔记
 
-VitePress 1.6.3 文档站（`zviewer-docs`），源文件在 `docs/`，构建产物 `dist/`（`outDir: '../dist'`，即仓库根的 `dist/`）。`.gitignore` 里有 `dist/`，但根 `dist/` 下 76 个文件历史上被强制跟踪，`git add -A` 会带上它们。另有一个 2026-08-04 的老构建产物 `docs/dist/`（提交 `e467330 修改产物输出目录`）也被跟踪，已过期，别把它当成当前产物。
+VitePress 1.6.4 文档站（`zviewer-docs`），源文件在 `docs/`，构建产物 `dist/`（`outDir: '../dist'`，即仓库根的 `dist/`）。`.gitignore` 里有 `dist/`，但根 `dist/` 下 76 个文件历史上被强制跟踪，`git add -A` 会带上它们（被 ignore 拦截时要 `git add -f dist/`）。另有一个 2026-08-04 的老构建产物 `docs/dist/`（提交 `e467330 修改产物输出目录`）也被跟踪，已过期，别把它当成当前产物。
 
 ## 当前分区（2026-10-02 起）
 
@@ -57,7 +57,7 @@ VitePress 1.6.3 文档站（`zviewer-docs`），源文件在 `docs/`，构建产
 1. **必须用 PowerShell 工具跑 `npm run build`，不要用 Bash 工具**。git bash 下 `process.cwd()` 的盘符是小写 `f:`，而 rollup 产物的 `facadeModuleId` 是大写 `F:`，VitePress 的 `resolvePageImports` 匹配不到页面 chunk，报 `Cannot read properties of undefined (reading 'imports')`。特征是**每次崩的页面都不同**，容易误判成某页内容有问题。
 2. **WorkBuddy 沙箱的 node-safe-delete shim 会拦构建**。本轮累计删除数超过 1000（`scope: turn`）后，node 进程内的 `rmSync` 全被拦，vite 的 `emptyDir` 与 VitePress 的 `.temp` 清理报 `SAFE_DELETE_BULK_CONFIRM_REQUIRED`。绕过办法：先用 Bash 手动 `rm -rf dist docs/.vitepress/.temp`（Bash 调用能拿到沙箱豁免），再跑构建。此时退出码仍是 1，但 `dist` 产物已完整写出，可直接拿产物做内链校验。
 
-另：vitepress 实际安装版本曾因 `^1.6.3` 漂到 1.6.4，已用 `npm install -D vitepress@1.6.3` 锁定并提交 lockfile。
+另：VitePress 已于 2026-10-04 升到 **1.6.4**（`package.json` 声明 `^1.6.4`），构建正常。排查过程中曾误判 1.6.4 有问题而降回 1.6.3，实际是盘符大小写问题，与版本无关。
 
 ## 与主项目同步文档的流程
 
