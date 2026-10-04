@@ -41,6 +41,7 @@ ZViewer 的配置分两类：启动时读取的环境变量，以及运行时可
 | `LIVEKIT_EXTERNAL` | 设为 `1` 时跳过内嵌服务，连接外置 LiveKit | `0` |
 | `LIVEKIT_BIND` | 内嵌服务的监听地址 | `::`（双栈） |
 | `LIVEKIT_NODE_IP` | ICE 广播地址（告知客户端向哪个地址建立媒体连接）。留空时自动启用 STUN 外部 IP 发现（要求服务器可出网）；NAT 复杂环境可手动指定公网 IP | 空（自动） |
+| `LIVEKIT_RTC_TCP_PORT` | 语音传输模式为 TCP 时开启的 ICE/TCP 直连端口，供 UDP 被拦截的网络兜底；模式本身在管理端「基础设置 → 语音传输模式」切换 | `3337` |
 | `LIVEKIT_TURN_DOMAIN` | TURN/TLS 域名。与 `LIVEKIT_TURN_CERT`、`LIVEKIT_TURN_KEY` 同时设置时，启用 TCP 5349 兜底中继，供 UDP 被拦截的网络使用；域名寻址不依赖公网 IP | — |
 | `LIVEKIT_TURN_CERT` | TURN TLS 证书路径（必须正式证书，自签证书不被浏览器 WebRTC 信任） | — |
 | `LIVEKIT_TURN_KEY` | TURN TLS 私钥路径 | — |

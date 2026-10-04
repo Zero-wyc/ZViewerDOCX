@@ -13,7 +13,7 @@
    │
    ├─ 信令 wss://页面域名/rtc ──▶ 后端 /rtc 反代 ──▶ livekit-server（3336）
    └─ 媒体 RTP over UDP 3333 ──────────────▶ livekit-server
-                                          （UDP 不通时改走 TURN/TLS 5349）
+                  （UDP 被拦截时：ICE/TCP 3337 直连，或 TURN/TLS 5349 中继）
 ```
 
 各端口的职责如下表。
@@ -22,6 +22,7 @@
 |---|---|---|
 | 3333 | TCP | 页面、REST API、Socket.IO，以及 `/rtc` 信令反代 |
 | 3333 | UDP | 语音媒体（RTP），与页面同号不同协议 |
+| 3337 | TCP | ICE/TCP 媒体直连，管理端把语音传输模式切到 TCP 时启用（按需） |
 | 3336 | TCP | livekit-server 的 HTTP 与信令端口，仅内部使用 |
 | 5349 | TCP | TURN/TLS 中继，UDP 被拦截时的兜底通道，需显式配置 |
 
@@ -106,13 +107,15 @@ LiveKit 的信令走两条通道，主后端都要代理，否则浏览器连不
 
 ## 内嵌服务的启动与降级
 
-启动流程在 bootstrap 早期以 fire-and-forget 方式触发，不阻塞主服务。下载二进制期间 `/api/voice/token` 返回 503，前端提示语音未就绪。
+启动流程在数据库初始化之后触发：先从系统设置读取语音传输模式（udp/tcp），再以 fire-and-forget 方式拉起子进程，不阻塞主服务。下载二进制期间 `/api/voice/token` 返回 503，前端提示语音未就绪。
 
-livekit-server 的启动参数如下。
+livekit-server 的启动参数如下（UDP 模式，默认）。
 
 ```
 livekit-server --dev --bind :: --port 3336 --udp-port 3333 --keys "<key>: <secret>"
 ```
+
+管理端把语音传输模式切换为 TCP 时，参数追加 `--tcp-port 3337`（详见「语音传输模式」一节）。
 
 `--bind ::` 以双栈监听，同时收 IPv4 与 IPv6（IPv4 连接以 v4-mapped 形式进入）。绑定 `0.0.0.0` 只会收到 IPv4，公网 IPv6 用户的媒体流将无法建立。若所在环境没有 IPv6 协议栈导致绑定 `::` 失败，程序自动回退 `0.0.0.0` 重试一次，代价是 IPv6 媒体不可用但语音整体可用。
 
@@ -128,9 +131,32 @@ livekit-server --dev --bind :: --port 3336 --udp-port 3333 --keys "<key>: <secre
 | `LIVEKIT_API_SECRET` | `zviewer-dev-secret` | 令牌签名密钥 |
 | `LIVEKIT_API_HOST` | `http://127.0.0.1:3336` | 服务端 API 与信令反代的上游地址 |
 | `LIVEKIT_BIND` | `::` | 内嵌服务监听地址 |
+| `LIVEKIT_RTC_TCP_PORT` | `3337` | ICE/TCP 端口（语音传输模式为 TCP 时开启） |
 | `LIVEKIT_EXTERNAL` | 未设置 | 设为 `1` 时跳过内嵌服务，改用外置 LiveKit |
 
 生产包（pkg 单文件）不会联网下载二进制。找不到伴生二进制时只打印告警并给出重建指引，语音功能随之不可用。
+
+## 语音传输模式（UDP / TCP）
+
+管理端「基础设置 → 语音传输模式」控制语音媒体的通道构成，保存后后端自动热重启 livekit-server 子进程，进行中的语音会短暂中断并自动重连。
+
+| 模式 | livekit-server 启动参数 | 部署侧要求 |
+|---|---|---|
+| UDP（默认） | `--udp-port 3333` | 放行 3333/udp |
+| TCP | `--udp-port 3333` + `--tcp-port 3337` | 额外放行 3337/tcp（Docker 需补端口映射） |
+
+TCP 模式开启 LiveKit 原生 ICE/TCP 直连：服务器同时广播 UDP 与 TCP 两路候选，由浏览器 ICE 自动选路——UDP 可用时走低延迟直连，被运营商或企业防火墙拦截时自动经 3337/tcp 连接媒体。UDP 通道始终开启（LiveKit 不支持禁用 UDP 候选），因此 TCP 模式是「加开兜底」而非「替换」；端口号可用环境变量 `LIVEKIT_RTC_TCP_PORT` 覆盖。
+
+TCP 直连与 TURN/TLS 中继解决的是同一类问题（UDP 被拦截），机制不同：
+
+| | ICE/TCP 3337 | TURN/TLS 5349 |
+|---|---|---|
+| 连接形态 | 浏览器与服务器**直连** | 经 TURN 服务器**中继** |
+| 部署要求 | 无需域名与证书 | 需域名与正式证书（自签不被 WebRTC 信任） |
+| 启用方式 | 管理端设置即时切换 | 配置 `LIVEKIT_TURN_DOMAIN` / `CERT` / `KEY` 三项 |
+| 穿透能力 | 受限于网络是否放行 3337/tcp | 更强（TLS 流量伪装为普通 HTTPS） |
+
+二者可以同时部署，客户端按连通性自动选择。
 
 ## 故障排查
 
@@ -139,7 +165,7 @@ livekit-server --dev --bind :: --port 3336 --udp-port 3333 --keys "<key>: <secre
 | 现象 | 原因 | 处理 |
 |---|---|---|
 | 前端提示语音未就绪 | 内嵌服务仍在下载或启动，或 `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` 未注入 | 查看服务端日志的 `[voice]` 段；单文件版确认包内含 `livekit-server` |
-| 接入后听不到别人声音 | 3333/udp 未放行，媒体无法直连 | 放行 UDP 3333；仍不通则配置 TURN/TLS 三项 |
+| 接入后听不到别人声音 | 3333/udp 未放行，媒体无法直连 | 放行 UDP 3333；运营商或企业防火墙拦 UDP 时，改用 TCP 传输模式（3337/tcp）或配置 TURN/TLS 三项 |
 | 页面在 HTTPS 下报混合内容 | `/rtc` 信令未反代 | 确认反代把 `/rtc` 转发到主端口 3333 |
 | 连接后立刻被断开 | 令牌序列化错误 | 检查是否 `await` 了 `token.toJwt()` |
 | 只有 IPv6 用户连不上 | 监听地址绑到了 `0.0.0.0` | 确认 `LIVEKIT_BIND` 保持 `::` |
@@ -153,6 +179,7 @@ livekit-server --dev --bind :: --port 3336 --udp-port 3333 --keys "<key>: <secre
 |---|---|
 | LiveKit 版本（开发模式自动下载） | v1.13.7 |
 | 信令 / 媒体端口 | 3336 / 3333 |
+| ICE/TCP 端口（TCP 模式） | 3337 |
 | TURN/TLS 端口 | 5349 |
 | 就绪等待超时 | 15s |
 | 发布编码档 | `music`（48kbps Opus），`dtx: false`，`red: true` |
