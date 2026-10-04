@@ -15,6 +15,10 @@ hero:
     - theme: alt
       text: GitHub
       link: https://github.com/Zero-wyc/ZViewer
+    - theme: alt
+      text: 亮点展示
+      link: /zviewer-intro/index.html
+      target: _blank
 
 features:
   - icon: 🎬

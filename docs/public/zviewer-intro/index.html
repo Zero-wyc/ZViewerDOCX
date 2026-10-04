@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ZViewer · 产品介绍 — 一起看 · 一起听 · 多人同步共享平台</title>
+<meta name="description" content="ZViewer：和朋友开一间房，同帧看番、同步听歌。多源挂载、弹幕翻倍、高画质、一起听一键搜歌。" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   ZViewer 产品介绍 — PPT 式翻页
+   设计系统：Material Design 3（Monet 色调）× 高斯模糊玻璃拟态
+   种子色：Ocean #0066cc
+   ============================================================ */
+:root {
+  /* --- Material 3 色调 --- */
+  --primary: #005cbb;
+  --on-primary: #ffffff;
+  --primary-container: #d7e3ff;
+  --on-primary-container: #001b3f;
+  --secondary-container: #c7e7ff;
+  --on-secondary-container: #001e2f;
+  --tertiary-container: #eaddff;
+  --on-tertiary-container: #21005d;
+
+  /* --- 表面与墨色 --- */
+  --surface: #f7f9fe;
+  --ink: #10161f;
+  --ink-2: rgba(16, 22, 31, 0.64);
+  --ink-3: rgba(16, 22, 31, 0.40);
+
+  /* --- 玻璃拟态 --- */
+  --glass: rgba(255, 255, 255, 0.58);
+  --glass-strong: rgba(255, 255, 255, 0.80);
+  --glass-line: rgba(255, 255, 255, 0.85);
+  --line: rgba(0, 92, 187, 0.13);
+
+  /* --- 阴影 --- */
+  --shadow-lg: 0 24px 60px -16px rgba(0, 27, 63, 0.16), 0 4px 14px rgba(0, 27, 63, 0.05);
+  --shadow-sm: 0 6px 18px -4px rgba(0, 27, 63, 0.08);
+  --shadow-primary: 0 12px 30px -8px rgba(0, 92, 187, 0.40);
+
+  --radius: 24px;
+  --ease: cubic-bezier(0.22, 0.9, 0.28, 1);
+  --font: "Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--font);
+  color: var(--ink);
+  background: linear-gradient(155deg, #f9fbff 0%, #eff4fc 50%, #edf1fa 100%);
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: var(--primary); color: #fff; }
+b { font-weight: 700; }
+
+/* ---------- 背景：Monet 三色高斯模糊光斑（缓慢漂移） ---------- */
+.bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.blob { position: absolute; border-radius: 50%; filter: blur(110px); will-change: transform; }
+.b1 {
+  width: 55vw; height: 55vw; left: -16vw; top: -20vw;
+  background: radial-gradient(circle, #8fbdf3, transparent 65%); opacity: 0.55;
+  animation: drift1 26s ease-in-out infinite alternate;
+}
+.b2 {
+  width: 46vw; height: 46vw; right: -14vw; bottom: -18vw;
+  background: radial-gradient(circle, #b9d8f7, transparent 65%); opacity: 0.48;
+  animation: drift2 32s ease-in-out infinite alternate;
+}
+.b3 {
+  width: 28vw; height: 28vw; right: 10vw; top: -12vw;
+  background: radial-gradient(circle, #d5c6f7, transparent 68%); opacity: 0.35;
+  animation: drift3 24s ease-in-out infinite alternate;
+}
+.b4 {
+  width: 22vw; height: 22vw; left: 14vw; bottom: -10vw;
+  background: radial-gradient(circle, #a8e0e8, transparent 68%); opacity: 0.30;
+  animation: drift1 30s ease-in-out infinite alternate-reverse;
+}
+@keyframes drift1 { from { transform: translate(0,0) scale(1); } to { transform: translate(6vw, 4vh) scale(1.12); } }
+@keyframes drift2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-5vw, -5vh) scale(1.08); } }
+@keyframes drift3 { from { transform: translate(0,0) scale(1); } to { transform: translate(-4vw, 6vh) scale(0.92); } }
+
+/* ---------- 幻灯片框架 ---------- */
+.deck { position: relative; z-index: 1; height: 100%; }
+.slide {
+  position: absolute; inset: 0;
+  display: grid; align-content: center;
+  padding: clamp(36px, 5.5vh, 64px) clamp(24px, 5vw, 84px) clamp(92px, 12vh, 124px);
+  opacity: 0; transform: translateY(30px) scale(0.982);
+  transition: opacity 0.55s var(--ease), transform 0.55s var(--ease), visibility 0s linear 0.55s;
+  pointer-events: none; visibility: hidden;
+  overflow: hidden;
+}
+.slide.active {
+  opacity: 1; transform: none; pointer-events: auto; visibility: visible;
+  transition: opacity 0.55s var(--ease), transform 0.55s var(--ease);
+}
+.wrap { width: 100%; max-width: 1180px; margin: 0 auto; transform-origin: center center; transition: transform 0.3s ease; }
+
+/* 进入动画：子元素逐层升起（.rv + --d 延迟） */
+.slide .rv { opacity: 0; transform: translateY(26px); }
+.slide.active .rv {
+  animation: rise 0.75s var(--ease) forwards;
+  animation-delay: var(--d, 0s);
+}
+@keyframes rise {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- 通用文字 ---------- */
+.kicker {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 11.5px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--primary); margin-bottom: 14px;
+  padding: 7px 15px; border-radius: 999px;
+  background: var(--glass); border: 1px solid var(--glass-line);
+  backdrop-filter: blur(16px) saturate(1.5); -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  box-shadow: var(--shadow-sm);
+}
+.kicker::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 10px rgba(0, 92, 187, 0.6); }
+h1, h2 { font-weight: 900; letter-spacing: -0.02em; line-height: 1.1; }
+h2 { font-size: clamp(30px, 3.9vw, 52px); margin-bottom: 12px; }
+h2 em { font-style: normal; color: var(--primary); }
+.lede { font-size: clamp(14px, 1.45vw, 17px); color: var(--ink-2); line-height: 1.65; max-width: 46em; }
+.lede b { color: var(--ink); }
+
+/* ---------- 玻璃卡片（M3 容器风格图标） ---------- */
+.glass {
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(26px) saturate(1.6);
+  -webkit-backdrop-filter: blur(26px) saturate(1.6);
+}
+.grid { display: grid; gap: 14px; }
+.grid > * { min-width: 0; }
+.g2 { grid-template-columns: repeat(2, 1fr); }
+.g3 { grid-template-columns: repeat(3, 1fr); }
+
+.card {
+  padding: clamp(14px, 1.7vw, 20px);
+  transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+.card:hover { transform: translateY(-4px); box-shadow: 0 30px 64px -18px rgba(0, 27, 63, 0.22), 0 6px 18px rgba(0, 27, 63, 0.07); }
+.card .ic {
+  width: 40px; height: 40px; border-radius: 13px;
+  display: grid; place-items: center;
+  font-size: 16px; font-weight: 800; margin-bottom: 10px;
+  background: var(--primary-container); color: var(--on-primary-container);
+}
+.card .ic.s { background: var(--secondary-container); color: var(--on-secondary-container); }
+.card .ic.t { background: var(--tertiary-container); color: var(--on-tertiary-container); }
+.card h3 { font-size: clamp(14px, 1.35vw, 16.5px); font-weight: 800; margin-bottom: 5px; letter-spacing: -0.01em; }
+.card p { font-size: clamp(12px, 1.12vw, 13.5px); color: var(--ink-2); line-height: 1.6; }
+.card p b { color: var(--primary); }
+
+/* M3 风格 chip */
+.tag {
+  display: inline-block; padding: 8px 16px; border-radius: 999px;
+  background: var(--glass-strong); border: 1px solid var(--line);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  color: var(--on-primary-container); font-size: 12.5px; font-weight: 700;
+  box-shadow: var(--shadow-sm);
+}
+.tag.on { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: var(--shadow-primary); }
+
+/* ---------- HUD：进度 / 页码 / 导航 ---------- */
+.hud { position: fixed; z-index: 5; inset: 0; pointer-events: none; }
+.progress {
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: rgba(0, 92, 187, 0.10);
+}
+.progress i {
+  display: block; height: 100%; width: 6%;
+  background: linear-gradient(90deg, var(--primary), #5a9bec);
+  border-radius: 0 3px 3px 0;
+  transition: width 0.5s var(--ease);
+}
+.counter {
+  position: absolute; right: clamp(20px, 3vw, 40px); bottom: 24px;
+  display: flex; align-items: baseline; gap: 5px;
+  font-size: 12px; font-weight: 800; letter-spacing: 0.12em; color: var(--ink-3);
+}
+.counter b { color: var(--primary); font-size: 16px; }
+.dots {
+  position: absolute; left: 50%; transform: translateX(-50%); bottom: 26px;
+  display: flex; gap: 7px; pointer-events: auto;
+  padding: 7px 10px; border-radius: 999px;
+  background: var(--glass); border: 1px solid var(--glass-line);
+  backdrop-filter: blur(18px) saturate(1.5); -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  box-shadow: var(--shadow-sm);
+}
+.dots button {
+  width: 8px; height: 8px; border-radius: 50%; border: none; cursor: pointer;
+  background: rgba(0, 92, 187, 0.22); transition: all 0.3s var(--ease); padding: 0;
+}
+.dots button:hover { background: rgba(0, 92, 187, 0.45); }
+.dots button.on { background: var(--primary); width: 24px; border-radius: 5px; }
+.brand-mark {
+  position: absolute; left: clamp(20px, 3vw, 40px); bottom: 24px;
+  font-size: 14px; font-weight: 900; letter-spacing: -0.01em; color: var(--ink-3);
+}
+.brand-mark i { font-style: normal; color: var(--primary); }
+/* 左右翻页按钮：玻璃圆形，悬停浮现 */
+.navbtn {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 46px; height: 46px; border-radius: 50%;
+  display: grid; place-items: center; cursor: pointer;
+  background: var(--glass); border: 1px solid var(--glass-line);
+  backdrop-filter: blur(18px) saturate(1.5); -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  box-shadow: var(--shadow-sm);
+  color: var(--primary); font-size: 17px; font-weight: 900;
+  opacity: 0; transition: opacity 0.3s ease, transform 0.25s var(--ease), box-shadow 0.25s ease;
+  pointer-events: auto;
+}
+.navbtn.prev { left: clamp(14px, 2vw, 28px); }
+.navbtn.next { right: clamp(14px, 2vw, 28px); }
+.hud:hover .navbtn, .navbtn:focus-visible { opacity: 1; }
+.navbtn:hover { transform: translateY(-50%) scale(1.08); box-shadow: var(--shadow-lg); }
+.navbtn:active { transform: translateY(-50%) scale(0.96); }
+
+/* ============ 目录页 ============ */
+.s-agenda .rows { margin-top: 22px; }
+.s-agenda .row {
+  display: grid; grid-template-columns: clamp(52px, 6vw, 88px) 1fr auto;
+  gap: clamp(12px, 2vw, 24px); align-items: center;
+  padding: clamp(12px, 1.8vh, 17px) clamp(8px, 1vw, 16px);
+  border-bottom: 1px solid var(--line);
+  border-radius: 14px;
+  transition: background 0.25s ease;
+}
+.s-agenda .row:hover { background: rgba(255, 255, 255, 0.5); }
+.s-agenda .row:first-child { border-top: 1px solid var(--line); }
+.s-agenda .no { font-size: clamp(24px, 3vw, 38px); font-weight: 900; color: var(--primary); letter-spacing: -0.02em; opacity: 0.85; }
+.s-agenda .t { font-weight: 900; font-size: clamp(16px, 1.9vw, 22px); }
+.s-agenda .d { font-size: 12.5px; color: var(--ink-2); margin-top: 3px; }
+.s-agenda .pg { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; color: var(--ink-3); white-space: nowrap; }
+
+/* ============ S1 封面 ============ */
+.s1 .logo-row { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+.logo-tri {
+  width: 52px; height: 52px; border-radius: 16px;
+  background: var(--primary);
+  box-shadow: var(--shadow-primary);
+  display: grid; place-items: center;
+}
+.logo-tri::after {
+  content: ""; display: block; margin-left: 4px;
+  border-left: 16px solid #fff; border-top: 10px solid transparent; border-bottom: 10px solid transparent;
+}
+.s1 .logo-name { font-size: 20px; font-weight: 900; letter-spacing: -0.01em; }
+.s1 h1 { font-size: clamp(56px, 9.5vw, 130px); }
+.s1 h1 span { color: var(--primary); }
+.s1 .sub { font-size: clamp(16px, 2.3vw, 25px); font-weight: 700; color: var(--ink-2); margin-top: 16px; }
+.s1 .sub em { font-style: normal; color: var(--primary); }
+.s1 .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.s1 .hero-grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: clamp(24px, 4vw, 56px); align-items: center; }
+.s1 .stats { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+.s1 .stat { padding: 13px 19px; }
+.s1 .stat .n { font-size: clamp(20px, 2.4vw, 28px); font-weight: 900; color: var(--primary); line-height: 1.1; }
+.s1 .stat .l { font-size: 11.5px; color: var(--ink-2); font-weight: 700; margin-top: 3px; }
+.s1 .cta-row { display: flex; gap: 12px; margin-top: 26px; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 24px; border-radius: 999px;
+  font-weight: 700; font-size: 14px; text-decoration: none;
+  transition: transform 0.25s var(--ease), box-shadow 0.25s ease;
+}
+.btn.pri { background: var(--primary); color: #fff; box-shadow: var(--shadow-primary); }
+.btn.sec { background: var(--glass-strong); color: var(--on-primary-container); border: 1px solid var(--line); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.btn:hover { transform: translateY(-3px); }
+.btn.pri:hover { box-shadow: 0 18px 38px -8px rgba(0, 92, 187, 0.5); }
+.s1 .visual { position: relative; height: clamp(280px, 32vw, 420px); }
+.vplayer {
+  position: absolute; top: 0; right: 0; width: min(100%, 380px);
+  aspect-ratio: 16 / 10; border-radius: 22px; overflow: hidden;
+  border: 1px solid var(--glass-line);
+  background: linear-gradient(140deg, #14263f, #0b1626);
+  box-shadow: var(--shadow-lg); transform: rotate(-2deg);
+  animation: floaty 7s ease-in-out infinite;
+}
+.vhead { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; color: rgba(255, 255, 255, 0.85); font-size: 11.5px; font-weight: 700; z-index: 2; }
+.vhead .live { color: #6fe3a1; }
+.vplayer .tri { position: absolute; top: 47%; left: 50%; transform: translate(-50%, -50%); width: 0; height: 0; border-left: 22px solid rgba(255, 255, 255, 0.92); border-top: 14px solid transparent; border-bottom: 14px solid transparent; }
+.vplayer .vbar { position: absolute; left: 6%; right: 6%; bottom: 9%; height: 5px; border-radius: 4px; background: rgba(255, 255, 255, 0.22); }
+.vplayer .vbar i { display: block; width: 62%; height: 100%; border-radius: 4px; background: #5a9bec; box-shadow: 0 0 12px rgba(90, 155, 236, 0.9); }
+@keyframes floaty { 0%, 100% { transform: rotate(-2deg) translateY(0); } 50% { transform: rotate(-2deg) translateY(-10px); } }
+.vmusic {
+  position: absolute; left: 0; bottom: 4%; width: min(74%, 255px);
+  border-radius: 18px; padding: 13px 15px; display: flex; gap: 12px; align-items: center;
+  background: var(--glass-strong); border: 1px solid var(--glass-line);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(20px) saturate(1.5); -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  transform: rotate(2deg);
+  animation: floaty2 8s ease-in-out infinite;
+}
+@keyframes floaty2 { 0%, 100% { transform: rotate(2deg) translateY(0); } 50% { transform: rotate(2deg) translateY(8px); } }
+.disc-mini {
+  width: 44px; height: 44px; border-radius: 50%; flex: none;
+  background: radial-gradient(circle at 34% 34%, #8cc4f2, var(--primary) 58%, #00244f);
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.15);
+  animation: spin 9s linear infinite; position: relative;
+}
+.disc-mini::after { content: ""; position: absolute; inset: 0; margin: auto; width: 22%; height: 22%; border-radius: 50%; background: #fff; }
+.vmusic .t { font-size: 12.5px; font-weight: 800; }
+.vmusic .s { font-size: 11px; color: var(--ink-2); margin-top: 2px; }
+.vmusic .s b { color: var(--primary); }
+
+/* ============ S2 一句话 ============ */
+.s2 .bigline { font-size: clamp(24px, 3vw, 38px); font-weight: 900; line-height: 1.4; max-width: 20em; letter-spacing: -0.01em; }
+.s2 .bigline em { font-style: normal; color: var(--primary); }
+.s2 .g3 { margin-top: 30px; }
+
+/* ============ S3 多源同步 ============ */
+.sources { margin-top: 20px; }
+
+/* ============ S4 弹幕翻倍 ============ */
+.s4 .stage { margin-top: 20px; display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; align-items: stretch; }
+.s4 .stage > * { min-width: 0; }
+.danmaku-box {
+  position: relative; border-radius: var(--radius); overflow: hidden;
+  min-width: 0; min-height: 240px;
+  border: 1px solid var(--glass-line);
+  background: linear-gradient(140deg, #14263f, #0b1626);
+  box-shadow: var(--shadow-lg);
+}
+.danmaku-box .mask { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 20, 36, 0.25), rgba(10, 20, 36, 0) 30%, rgba(10, 20, 36, 0.45)); }
+.danmaku-box .track-label { position: absolute; left: 12px; bottom: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+.danmaku-box .track-label span {
+  font-size: 11px; font-weight: 700; padding: 5px 11px; border-radius: 999px; color: #fff;
+  background: rgba(0, 92, 187, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.danmaku-box .track-label span:nth-child(2) { background: rgba(90, 155, 236, 0.85); }
+.danmaku-box .track-label span:nth-child(3) { background: rgba(160, 205, 250, 0.92); color: #0c2136; }
+.dm {
+  position: absolute; white-space: nowrap; font-weight: 700;
+  font-size: clamp(13px, 1.5vw, 17px); color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  animation: fly linear infinite;
+}
+@keyframes fly { from { transform: translateX(105%); } to { transform: translateX(-320%); } }
+.dm.d2 { color: #ffd76e; } .dm.d3 { color: #7ef0b1; }
+.s4 .side { display: grid; gap: 12px; align-content: center; }
+.s4 .multiply { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: clamp(13px, 1.4vw, 16px); flex-wrap: wrap; }
+.s4 .multiply .x { color: var(--primary); font-size: clamp(17px, 2vw, 25px); }
+.s4 .multiply .tag { font-size: 11.5px; padding: 6px 12px; }
+
+/* ============ S5 高画质 ============ */
+.s5 .hq { margin-top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.hq-card { padding: clamp(16px, 2vw, 24px); position: relative; overflow: hidden; transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease); }
+.hq-card:hover { transform: translateY(-4px); box-shadow: 0 30px 64px -18px rgba(0, 27, 63, 0.22); }
+.hq-card .badge {
+  position: absolute; top: 18px; right: 18px;
+  font-size: 11px; font-weight: 800; letter-spacing: 0.1em;
+  background: var(--primary); color: #fff; padding: 6px 13px; border-radius: 999px;
+  box-shadow: var(--shadow-primary);
+}
+.hq-card .badge.alt { background: var(--secondary-container); color: var(--on-secondary-container); box-shadow: none; }
+.hq-card h3 { font-size: clamp(17px, 2vw, 23px); font-weight: 900; margin-bottom: 10px; letter-spacing: -0.01em; }
+.hq-card p { font-size: clamp(13px, 1.35vw, 15px); color: var(--ink-2); line-height: 1.7; }
+.hq-card p b { color: var(--primary); }
+.hq-card .quality-line { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.hq-card .quality-line span {
+  font-size: 11.5px; font-weight: 800; padding: 5px 12px; border-radius: 8px;
+  background: var(--primary-container); color: var(--on-primary-container);
+}
+.hq-card .quality-line span.hot { background: var(--primary); color: #fff; }
+.s5 .note { margin-top: 18px; font-size: 13px; color: var(--ink-3); display: flex; align-items: center; gap: 8px; }
+.s5 .note::before { content: "※"; color: var(--primary); font-weight: 900; }
+
+/* ============ S6 一键搜歌 ============ */
+.s6 .flow { margin-top: 20px; display: grid; grid-template-columns: 1fr 46px 1fr 46px 1fr; gap: 0; align-items: center; }
+.s6 .step-card { padding: clamp(14px, 1.7vw, 20px); }
+.s6 .arrow { text-align: center; color: var(--primary); font-size: 22px; font-weight: 900; }
+.s6 .step-card .n { font-size: 11px; font-weight: 800; color: var(--primary); letter-spacing: 0.14em; margin-bottom: 12px; }
+.mini-player {
+  border-radius: 14px; background: linear-gradient(140deg, #14263f, #0b1626);
+  padding: 13px 15px; margin-bottom: 12px; color: #fff;
+}
+.mini-player .t { font-size: 13px; font-weight: 700; }
+.mini-player .s { font-size: 11px; opacity: 0.6; margin-top: 3px; }
+.mini-player .bar { height: 4px; border-radius: 3px; background: rgba(255, 255, 255, 0.2); margin-top: 10px; }
+.mini-player .bar i { display: block; height: 100%; width: 40%; border-radius: 3px; background: #5a9bec; }
+.song-row {
+  display: flex; align-items: center; gap: 10px; border-radius: 14px; padding: 11px 13px;
+  background: var(--glass-strong); border: 1px solid var(--line);
+  margin-bottom: 10px; box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.song-row .cover { width: 36px; height: 36px; border-radius: 10px; background: var(--primary); flex: none; position: relative; }
+.song-row .cover::after { content: ""; position: absolute; inset: 0; margin: auto; width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.9); }
+.song-row .meta { flex: 1; min-width: 0; }
+.song-row .meta .t { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.song-row .meta .s { font-size: 11px; color: var(--ink-3); }
+.song-row .fav { font-size: 11px; font-weight: 800; color: #fff; background: var(--primary); border-radius: 999px; padding: 5px 11px; flex: none; box-shadow: var(--shadow-primary); }
+.s6 .extra { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* ============ 双音源 ============ */
+.s-dual .switcher { margin-top: 18px; padding: clamp(14px, 2vw, 22px); display: grid; gap: 12px; }
+.src-tabs { display: flex; gap: 8px; }
+.src-tabs span {
+  flex: 1; text-align: center; padding: 11px 12px; border-radius: 14px;
+  background: var(--glass-strong); border: 1px solid var(--line);
+  font-weight: 700; font-size: 13px; color: var(--ink-2);
+}
+.src-tabs span.on { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: var(--shadow-primary); }
+.s-dual .nowbar {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--glass-strong); border: 1px solid var(--line);
+  border-radius: 14px; padding: 11px 15px; font-size: 13px; font-weight: 700;
+  box-shadow: var(--shadow-sm); flex-wrap: wrap;
+}
+.s-dual .nowbar .bar { flex: 1; min-width: 80px; height: 4px; border-radius: 3px; background: rgba(0, 92, 187, 0.15); position: relative; }
+.s-dual .nowbar .bar i { position: absolute; inset: 0 auto 0 0; width: 42%; border-radius: 3px; background: var(--primary); }
+.s-dual .nowbar small { color: var(--ink-3); font-weight: 500; }
+
+/* ============ 语音聊天 ============ */
+.s-voice .voice-mock {
+  margin-top: 20px; padding: clamp(16px, 2.2vw, 26px);
+  display: flex; align-items: center; gap: clamp(16px, 2.6vw, 32px); flex-wrap: wrap;
+}
+.voice-avs { display: flex; }
+.voice-avs span {
+  width: clamp(40px, 4.4vw, 54px); height: clamp(40px, 4.4vw, 54px); border-radius: 50%;
+  border: 3px solid #fff; margin-left: -10px; display: grid; place-items: center;
+  font-size: clamp(14px, 1.5vw, 18px); font-weight: 800; color: #fff; box-shadow: var(--shadow-sm);
+}
+.voice-avs span:first-child { margin-left: 0; }
+.voice-avs span:nth-child(1) { background: #005cbb; }
+.voice-avs span:nth-child(2) { background: #3f8fe0; }
+.voice-avs span:nth-child(3) { background: #67b0ec; }
+.voice-avs span:nth-child(4) { background: #9cc8f2; }
+.voice-avs span.talking { position: relative; }
+.voice-avs span.talking::after {
+  content: ""; position: absolute; inset: -6px; border-radius: 50%;
+  border: 2px solid var(--primary); animation: pulse 1.6s ease-out infinite;
+}
+@keyframes pulse { 0% { transform: scale(0.9); opacity: 1; } 100% { transform: scale(1.25); opacity: 0; } }
+.eq { display: flex; gap: 4px; align-items: flex-end; height: 30px; }
+.eq i { width: 5px; border-radius: 3px; background: var(--primary); animation: eq 1s ease-in-out infinite; display: block; }
+.eq i:nth-child(2) { animation-delay: 0.15s; } .eq i:nth-child(3) { animation-delay: 0.3s; }
+.eq i:nth-child(4) { animation-delay: 0.45s; } .eq i:nth-child(5) { animation-delay: 0.6s; }
+@keyframes eq { 0%, 100% { transform: scaleY(0.35); } 50% { transform: scaleY(1); } }
+.voice-status { flex: 1; min-width: 180px; }
+.voice-status .t { font-weight: 900; font-size: clamp(14px, 1.6vw, 18px); }
+.voice-status .s { font-size: 12.5px; color: var(--ink-2); margin-top: 3px; }
+.voice-status .s b { color: var(--primary); }
+
+/* ============ 歌词播放页 ============ */
+.s-lyr .player { margin-top: 20px; padding: clamp(16px, 2vw, 26px); display: grid; grid-template-columns: auto 1fr; gap: clamp(16px, 2.6vw, 30px); align-items: center; }
+.disc {
+  width: clamp(70px, 8vw, 102px); height: clamp(70px, 8vw, 102px); border-radius: 50%;
+  background: radial-gradient(circle at 34% 34%, #8cc4f2, var(--primary) 58%, #00244f);
+  box-shadow: 0 16px 36px rgba(0, 92, 187, 0.35), inset 0 0 0 6px rgba(255, 255, 255, 0.12);
+  animation: spin 9s linear infinite; position: relative; flex: none;
+}
+.disc::after { content: ""; position: absolute; inset: 0; margin: auto; width: 20%; height: 20%; border-radius: 50%; background: #fff; box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.25); }
+@keyframes spin { to { transform: rotate(360deg); } }
+.lyric-main .song { font-size: clamp(17px, 2vw, 23px); font-weight: 900; letter-spacing: -0.01em; }
+.lyric-main .artist { font-size: 12.5px; color: var(--ink-3); margin-top: 3px; }
+.lyric-line { margin-top: 12px; font-size: clamp(15px, 1.8vw, 21px); font-weight: 700; color: var(--primary); }
+.btnbar { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+.bb {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 12px;
+  background: var(--glass-strong); border: 1px solid var(--line);
+  font-size: 12px; font-weight: 700; color: var(--on-primary-container);
+  box-shadow: var(--shadow-sm);
+}
+.bb.pri { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* ============ 分区屏蔽 ============ */
+.filter-mock { margin-top: 24px; padding: clamp(16px, 2vw, 22px); display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.fi {
+  flex: 1; min-width: 220px; display: flex; align-items: center; gap: 8px;
+  background: var(--glass-strong); border: 1px solid var(--line);
+  border-radius: 14px; padding: 12px 15px; font-size: 13px; color: var(--ink-3); flex-wrap: wrap;
+}
+.fi b { color: var(--ink); }
+.fi .tagx { background: var(--primary-container); color: var(--on-primary-container); font-size: 12px; font-weight: 700; padding: 4px 11px; border-radius: 999px; }
+.fi .tagx::after { content: " ×"; color: var(--ink-3); }
+.flowline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 18px; font-size: 12.5px; font-weight: 700; }
+.flowline span {
+  background: var(--glass-strong); border: 1px solid var(--line);
+  border-radius: 10px; padding: 7px 13px; color: var(--ink-2);
+  box-shadow: var(--shadow-sm);
+}
+.flowline em { font-style: normal; color: var(--primary); font-weight: 900; }
+
+/* ============ 字幕 ============ */
+.sub-mock {
+  border-radius: var(--radius); overflow: hidden;
+  background: linear-gradient(140deg, #14263f, #0b1626);
+  aspect-ratio: 16 / 4.2; position: relative;
+  box-shadow: var(--shadow-lg); border: 1px solid var(--glass-line); min-width: 0;
+}
+.sub-mock .line {
+  position: absolute; left: 6%; right: 6%; bottom: 16%; text-align: center;
+  color: #fff; font-weight: 700; font-size: clamp(14px, 1.7vw, 20px);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+.sub-mock .line small { display: block; font-size: 11px; color: rgba(255, 255, 255, 0.55); font-weight: 500; margin-bottom: 7px; letter-spacing: 0.12em; text-transform: uppercase; }
+.sub-mock .cap { position: absolute; left: 5%; right: 5%; bottom: 7%; height: 4px; border-radius: 3px; background: rgba(255, 255, 255, 0.22); }
+.sub-mock .cap i { display: block; height: 100%; width: 46%; border-radius: 3px; background: #5a9bec; }
+.fmt-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.fmt-chips span {
+  font-size: 12px; font-weight: 800; padding: 6px 14px; border-radius: 9px;
+  background: var(--glass-strong); border: 1px solid var(--line);
+  color: var(--on-primary-container); box-shadow: var(--shadow-sm);
+}
+.fmt-chips span.hot { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* ============ 个性化 ============ */
+.set-panels { margin-top: 20px; display: grid; grid-template-columns: 1fr 1.25fr; gap: 14px; }
+.panel { padding: clamp(16px, 1.9vw, 22px); }
+.panel h3 { font-weight: 900; font-size: 15.5px; margin-bottom: 4px; letter-spacing: -0.01em; }
+.panel .pnote { font-size: 12px; color: var(--ink-3); margin-bottom: 10px; }
+.set-row { display: flex; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 700; }
+.set-row:last-child { border-bottom: none; }
+.set-row .lbl { flex: 0 0 6.5em; color: var(--ink-2); }
+.mini-slider { flex: 1; height: 8px; border-radius: 5px; background: linear-gradient(90deg, var(--primary-container), var(--primary)); position: relative; min-width: 60px; }
+.mini-slider i { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 17px; height: 17px; border-radius: 50%; background: #fff; border: 3px solid var(--primary); box-shadow: var(--shadow-sm); }
+.font-chips { display: flex; flex-wrap: wrap; gap: 7px; flex: 1; }
+.font-chips span { font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: var(--glass-strong); border: 1px solid var(--line); color: var(--on-primary-container); }
+.font-chips span.on { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* ============ S7 细节网格 ============ */
+.s7 .grid { margin-top: 20px; }
+
+/* ============ S8 主题 ============ */
+.s8 .demo { margin-top: 20px; display: grid; grid-template-columns: 1fr 1.4fr; gap: 14px; align-items: stretch; }
+.s8 .palette { padding: clamp(18px, 2.2vw, 26px); display: grid; gap: 16px; align-content: start; }
+.s8 .palette h3 { font-size: 16px; font-weight: 900; letter-spacing: -0.01em; }
+.s8 .swatches { display: flex; gap: 11px; }
+.s8 .swatches span {
+  width: 36px; height: 36px; border-radius: 50%;
+  box-shadow: inset 0 0 0 3px #fff, var(--shadow-sm);
+  cursor: pointer; transition: transform 0.25s var(--ease);
+}
+.s8 .swatches span:hover { transform: scale(1.15); }
+.s8 .swatches span.on { box-shadow: inset 0 0 0 3px #fff, 0 0 0 2px var(--primary), var(--shadow-sm); }
+.s8 .preview { padding: clamp(18px, 2.2vw, 26px); display: grid; gap: 12px; align-content: center; }
+.s8 .pv-row { display: flex; gap: 10px; align-items: center; }
+.s8 .pv-chip { flex: 1; border-radius: 14px; padding: 14px 16px; font-weight: 700; font-size: 13.5px; }
+.s8 .pv-chip.a { background: var(--primary); color: #fff; box-shadow: var(--shadow-primary); }
+.s8 .pv-chip.b { background: var(--glass-strong); border: 1px solid var(--line); color: var(--ink); }
+.s8 .pv-chip.c { background: var(--primary-container); color: var(--on-primary-container); }
+.s8 .pv-slider { height: 10px; border-radius: 6px; background: linear-gradient(90deg, var(--primary-container), var(--primary)); position: relative; }
+.s8 .pv-slider i { position: absolute; top: 50%; left: 68%; transform: translate(-50%, -50%); width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-sm); border: 3px solid var(--primary); }
+
+/* ============ S9 移动端 ============ */
+.s9 .phones { margin-top: 22px; display: flex; flex-wrap: wrap; gap: clamp(20px, 3vw, 42px); justify-content: center; align-items: flex-end; }
+.phone {
+  width: clamp(150px, 17vw, 210px); border-radius: 32px; border: 1px solid var(--glass-line);
+  background: var(--glass-strong); box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  padding: 12px; position: relative;
+}
+.phone.landscape { width: clamp(250px, 27vw, 340px); border-radius: 26px; }
+.phone .notch { width: 70px; height: 5px; border-radius: 4px; background: rgba(16, 22, 31, 0.15); margin: 4px auto 10px; }
+.phone.landscape .notch { width: 5px; height: 44px; position: absolute; left: 6px; top: 50%; transform: translateY(-50%); margin: 0; }
+.phone .screen { border-radius: 20px; background: linear-gradient(140deg, #16304e, #0b1a2e); aspect-ratio: 9/17; position: relative; overflow: hidden; }
+.phone.landscape .screen { aspect-ratio: 16/8.6; border-radius: 16px; margin-left: 12px; }
+.screen .cap { position: absolute; left: 10%; right: 10%; bottom: 14%; height: 4px; border-radius: 3px; background: rgba(255, 255, 255, 0.25); }
+.screen .cap i { display: block; height: 100%; width: 55%; border-radius: 3px; background: #5a9bec; }
+.screen .p { position: absolute; top: 46%; left: 50%; transform: translate(-50%, -50%); width: 0; height: 0; border-left: 15px solid rgba(255, 255, 255, 0.92); border-top: 9px solid transparent; border-bottom: 9px solid transparent; }
+.laptop { width: clamp(260px, 30vw, 400px); }
+.laptop .screen {
+  border-radius: 16px 16px 4px 4px; background: linear-gradient(140deg, #16304e, #0b1a2e);
+  aspect-ratio: 16 / 8.6; position: relative; overflow: hidden;
+  border: 1px solid var(--glass-line); box-shadow: var(--shadow-lg);
+}
+.laptop .base {
+  height: 12px; width: 114%; margin-left: -7%;
+  background: var(--glass-strong); border: 1px solid var(--glass-line); border-top: none;
+  border-radius: 0 0 18px 18px; box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+}
+.device-label { text-align: center; font-size: 12px; font-weight: 700; color: var(--ink-2); margin-top: 12px; }
+.app-banner {
+  margin-top: 24px; padding: clamp(14px, 2vw, 22px);
+  display: flex; align-items: center; gap: clamp(14px, 2vw, 24px); flex-wrap: wrap;
+}
+.app-banner .app-ic {
+  width: 48px; height: 48px; border-radius: 14px; flex: none;
+  background: var(--primary); box-shadow: var(--shadow-primary);
+  display: grid; place-items: center;
+}
+.app-banner .app-ic::after { content: ""; display: block; margin-left: 3px; border-left: 13px solid #fff; border-top: 8px solid transparent; border-bottom: 8px solid transparent; }
+.app-banner .app-txt { flex: 1; min-width: 220px; }
+.app-banner .app-txt .t { font-weight: 900; font-size: clamp(15px, 1.7vw, 19px); }
+.app-banner .app-txt .s { font-size: 13px; color: var(--ink-2); margin-top: 3px; }
+.app-banner .app-txt .s b { color: var(--primary); }
+.app-banner a { text-decoration: none; }
+
+/* ============ S10 结尾 ============ */
+.s10 .wrap { text-align: center; display: grid; justify-items: center; }
+.s10 .logo-tri { width: 74px; height: 74px; border-radius: 22px; margin-bottom: 28px; animation: floaty 6s ease-in-out infinite; }
+.s10 .logo-tri::after { border-left-width: 22px; border-top-width: 14px; border-bottom-width: 14px; margin-left: 5px; }
+.s10 h2 { font-size: clamp(40px, 6.5vw, 84px); }
+.s10 .lede { margin: 20px auto 32px; text-align: center; }
+.s10 .links { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+.s10 .fine { margin-top: 32px; font-size: 12.5px; color: var(--ink-3); }
+
+/* ---------- 深色 mock 区域中的弹幕层级 ---------- */
+.vplayer .dm, .danmaku-box .dm { z-index: 1; }
+
+/* ---------- 动效降级 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .blob, .vplayer, .vmusic, .disc, .disc-mini, .s10 .logo-tri { animation: none !important; }
+  .slide .rv { opacity: 1; transform: none; }
+  .slide.active .rv { animation: none; }
+  .dm { animation-duration: 30s; }
+}
+
+/* ---------- 窄屏降级 ---------- */
+@media (max-width: 900px) {
+  .g3 { grid-template-columns: repeat(2, 1fr); }
+  .s4 .stage, .s5 .hq, .s8 .demo { grid-template-columns: 1fr; }
+  .s6 .flow { grid-template-columns: 1fr; gap: 8px; }
+  .s6 .arrow { transform: rotate(90deg); }
+  .s-lyr .player { grid-template-columns: 1fr; }
+  .s1 .hero-grid { grid-template-columns: 1fr; }
+  .s1 .visual { height: clamp(240px, 52vw, 380px); margin-top: 8px; }
+  .set-panels { grid-template-columns: 1fr; }
+  .navbtn { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg" aria-hidden="true">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+  <div class="blob b4"></div>
+</div>
+
+<div class="deck">
+
+<!-- ============ 01 封面 ============ -->
+<section class="slide s1 active">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="hero-left">
+        <div class="logo-row rv" style="--d:.05s">
+          <div class="logo-tri"></div>
+          <div class="logo-name">ZViewer</div>
+        </div>
+        <h1 class="rv" style="--d:.12s">一起看<br>一起听<span>.</span></h1>
+        <p class="sub rv" style="--d:.2s">ZViewer · 多人同步共享平台 —— <em>进度同步，多轨弹幕，超清画质，歌单同频</em>。</p>
+        <div class="chips rv" style="--d:.28s">
+          <span class="tag on">哔哩哔哩</span>
+          <span class="tag">OpenList</span>
+          <span class="tag">Emby</span>
+          <span class="tag">Jellyfin</span>
+          <span class="tag">WebDAV / FTP</span>
+          <span class="tag">MP4 直链</span>
+          <span class="tag">服务器文件</span>
+        </div>
+        <div class="stats rv" style="--d:.36s">
+          <div class="glass stat"><div class="n">7 种</div><div class="l">片源接入</div></div>
+          <div class="glass stat"><div class="n">×N</div><div class="l">弹幕轨道叠加</div></div>
+          <div class="glass stat"><div class="n">双端</div><div class="l">手机电脑兼容</div></div>
+          <div class="glass stat"><div class="n">2 大</div><div class="l">音乐音源</div></div>
+        </div>
+        <div class="cta-row rv" style="--d:.44s">
+          <a class="btn pri" href="https://github.com/Zero-wyc/ZViewer" target="_blank" rel="noopener">GitHub → Zero-wyc/ZViewer</a>
+          <a class="btn sec" href="https://docx.zviewer.zero251.xyz" target="_blank" rel="noopener">使用文档</a>
+          <a class="btn sec" href="https://github.com/Zero-wyc/ZViewer/releases" target="_blank" rel="noopener">下载体验</a>
+        </div>
+      </div>
+      <div class="hero-right visual rv" style="--d:.3s" aria-hidden="true">
+        <div class="vplayer">
+          <div class="vhead"><span>BV1xx411c7mD · 正在播放</span><span class="live">● 全房同步中</span></div>
+          <span class="dm" style="top:22%; animation-duration:9s;">前方高能预警！！！</span>
+          <span class="dm d2" style="top:38%; animation-duration:11s; animation-delay:-4s;">哈哈哈哈哈哈</span>
+          <span class="dm d3" style="top:54%; animation-duration:10s; animation-delay:-7s;">进度条一动全房都动</span>
+          <div class="tri"></div>
+          <div class="vbar"><i></i></div>
+        </div>
+        <div class="vmusic">
+          <div class="disc-mini"></div>
+          <div>
+            <div class="t">某某歌曲</div>
+            <div class="s">哔哩哔哩 · <b>歌词 PV 播放</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 02 目录 ============ -->
+<section class="slide s-agenda">
+  <div class="wrap">
+    <span class="kicker rv" style="--d:.05s">Agenda · 本次介绍</span>
+    <h2 class="rv" style="--d:.12s">五个章节，<em>看懂 ZViewer</em></h2>
+    <div class="rows">
+      <div class="row rv" style="--d:.2s"><span class="no">01</span><div><div class="t">一起看</div><div class="d">同步观影 · 多源片源 · 多轨弹幕 · 字幕 · 高画质 · 播放能力</div></div><span class="pg">04 — 08</span></div>
+      <div class="row rv" style="--d:.26s"><span class="no">02</span><div><div class="t">语音聊天</div><div class="d">语音聊天 · 一键开关 · 全场景覆盖</div></div><span class="pg">09</span></div>
+      <div class="row rv" style="--d:.32s"><span class="no">03</span><div><div class="t">一起听</div><div class="d">网易云 × 哔哩哔哩双音源 · 一键搜歌收藏 · 歌词页 · 分区屏蔽</div></div><span class="pg">10 — 13</span></div>
+      <div class="row rv" style="--d:.38s"><span class="no">04</span><div><div class="t">个性化</div><div class="d">超多个性化设置 · 动态主题与颜值</div></div><span class="pg">14 — 15</span></div>
+      <div class="row rv" style="--d:.44s"><span class="no">05</span><div><div class="t">随时随地上手</div><div class="d">手机电脑双端兼容 · 手机 App · 更多细节</div></div><span class="pg">16 — 17</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 03 一句话 ============ -->
+<section class="slide s2">
+  <div class="wrap">
+    <span class="kicker rv" style="--d:.05s">What is ZViewer</span>
+    <p class="bigline rv" style="--d:.14s">它不是又一个播放器。<br>它是你和朋友的<em>线上放映厅 + 听歌房</em>——<br>开一间房、丢一个链接，<em>同帧看片，同步听歌</em>。</p>
+    <div class="grid g3">
+      <div class="glass card rv" style="--d:.26s">
+        <div class="ic">房</div>
+        <h3>一间房，一个节奏</h3>
+        <p>房主点播放，画面<b>同步播放</b>、歌曲<b>一句不差</b>地同步走。暂停、拖进度、换内容，全房同步。</p>
+      </div>
+      <div class="glass card rv" style="--d:.34s">
+        <div class="ic s">链</div>
+        <h3>一个链接</h3>
+        <p>不用提前下载、不用传文件。B 站链接、网盘目录、媒体库，<b>输进来就能一起看</b>。</p>
+      </div>
+      <div class="glass card rv" style="--d:.42s">
+        <div class="ic t">屏</div>
+        <h3>什么设备都能进</h3>
+        <p>浏览器打开即用，手机竖屏横屏都适配。<b>不用装任何插件</b>，也不用对方是技术党。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 04 多源同步 ============ -->
+<section class="slide s3">
+  <div class="wrap">
+    <span class="kicker rv" style="--d:.05s">01 · 同步观看</span>
+    <h2 class="rv" style="--d:.12s">片源随便挂，<em>进度永远同步</em></h2>
+    <p class="lede rv" style="--d:.18s">B 站追番、网盘剧集、自己的媒体库——不管影片从哪来，进了房间就是<b>同一个影片</b>。房主短暂掉线？服务器继续播放，大家接着看。</p>
+    <div class="grid sources g3">
+      <div class="glass card rv" style="--d:.24s"><div class="ic">B</div><h3>哔哩哔哩</h3><p>输入 BV 号就能播，分 P、清晰度随便切，弹幕一并到位。</p></div>
+      <div class="glass card rv" style="--d:.29s"><div class="ic s">O</div><h3>OpenList / 网盘</h3><p>挂上网盘目录，剧集列表直接在房间里翻，点哪集看哪集。</p></div>
+      <div class="glass card rv" style="--d:.34s"><div class="ic t">E</div><h3>Emby / Jellyfin</h3><p>媒体库整库接入，存储库选片，家里 NAS 变成共同片库。</p></div>
+      <div class="glass card rv" style="--d:.39s"><div class="ic">W</div><h3>WebDAV / FTP</h3><p>各类存储服务通通支持，签名直链过期也<b>自动重新解析</b>。</p></div>
+      <div class="glass card rv" style="--d:.44s"><div class="ic s">M</div><h3>MP4 直链</h3><p>任何能访问的视频地址，直接输进房间开播。</p></div>
+      <div class="glass card rv" style="--d:.49s"><div class="ic t">服</div><h3>服务器文件挂载</h3><p>直接挂载<b>部署服务器上的影片目录</b>，本地硬盘里的收藏秒变全房间共享片库，不依赖任何外部网盘。</p></div>
+      <div class="glass card rv" style="--d:.54s; grid-column: 1 / -1"><div class="ic">权</div><h3>想自己动手？</h3><p>观众可以<b>申请控制权</b>，房主同意后可进行<b>暂停、跳转</b>等播放操作——换片等大权仍留在房主手里，且随时可以收回。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 05 弹幕翻倍 ============ -->
+<section class="slide s4">
+  <div class="wrap">
+    <span class="kicker rv" style="--d:.05s">02 · 弹幕翻倍</span>
+    <h2 class="rv" style="--d:.12s">一条弹幕太冷清？<em>轨道叠起来</em></h2>
+    <p class="lede rv" style="--d:.18s">B 站官方弹幕、弹弹Play 弹幕库、自己上传的弹幕文件——<b>多条轨道同时叠加渲染</b>，冷门老片也能刷出满屏热闹。</p>
+    <div class="stage">
+      <div class="danmaku-box rv" style="--d:.24s" aria-hidden="true">
+        <div class="mask"></div>
+        <span class="dm"  style="top:8%;  animation-duration:9s;">前方高能预警！！！</span>
+        <span class="dm d2" style="top:22%; animation-duration:11s; animation-delay:-3s;">哈哈哈哈哈哈哈哈</span>
+        <span class="dm d3" style="top:36%; animation-duration:10s; animation-delay:-6s;">这一段每年都要回来看一遍</span>
+        <span class="dm"  style="top:50%; animation-duration:12s; animation-delay:-2s;">弹幕护体</span>
+        <span class="dm d3" style="top:64%; animation-duration:9.5s; animation-delay:-5s;">经典永流传</span>
+        <span class="dm d2" style="top:78%; animation-duration:10.5s; animation-delay:-8s;">泪目了兄弟们</span>
+        <div class="track-label">
+          <span>轨道 1 · 哔哩哔哩</span><span>轨道 2 · 弹弹Play</span><span>轨道 3 · 自定义</span>
+        </div>
+      </div>
+      <div class="side">
+        <div class="glass card rv" style="--d:.28s">
+          <div class="ic">＋</div>
+          <h3>轨道自由组合</h3>
+          <p>想开几条开几条，各开各的互不打架，<b>弹幕量直接翻倍</b>。</p>
+        </div>
+        <div class="glass card rv" style="--d:.34s">
+          <div class="ic s">文</div>
+          <h3>本地弹幕文件</h3>
+          <p>手头的弹幕 XML / JSON 文件直接拖进来，<b>自己的回忆自己刷</b>。</p>
+        </div>
+        <div class="glass card rv" style="--d:.4s">
+          <div class="ic t">多</div>
+          <h3>同视频多挂 B 站弹幕</h3>
+          <p>同一个视频支持添加<b>多条哔哩哔哩弹幕轨道</b>——同一作品的多个投稿、多个版本的弹幕一并叠加，热闹再翻几倍。</p>
+        </div>
+        <div class="multiply rv" style="--d:.46s">
+          <span class="tag on">B站官方</span> <span class="x">＋</span>
+          <span class="tag on">弹弹Play</span> <span class="x">＋</span>
+          <span class="tag on">自定义</span> <span class="x">＝</span>
+          <span class="tag on">弹幕 ×N</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 06 字幕 ============ -->
+<section class="slide s-sub">
+  <div class="wrap">
+    <span class="kicker rv" style="--d:.05s">03 · 字幕</span>
+    <h2 class="rv" style="--d:.12s">字幕格式通吃，<em>主流格式均支持</em></h2>
+    <p class="lede rv" style="--d:.18s">项目中的字幕<b>均经过统一转换处理</b>后再渲染<b>超多格式兼容</b>与全程稳定，背后是前端<b>稀疏探测字幕引擎</b>。</p>
+    <div class="sub-mock rv" style="--d:.24s; margin-top: 18px;">
+      <div class="line"><small>统一转换渲染 · Unified Rendering</small>"我陪你走到最后，能不能不要回头。"</div>
+      <div class="cap"><i></i></div>
+    </div>
+    <div class="fmt-chips rv" style="--d:.3s">
+      <span class="hot">SRT</span><span class="hot">ASS</span><span class="hot">SSA</span><span>VTT</span><span>SMI</span><span>SUB</span><span>MKV 内嵌字幕</span>
+    </div>
+    <div class="grid g3" style="margin-top:18px">
+      <div class="glass card rv" style="--d:.36s"><div class="ic">换</div><h3>统一转换，坦诚相告</h3><p>所有字幕先<b>统一转换</b>再渲染：ASS 花字、卡拉OK 特效等<b>虽无法原样显示</b>，但文字内容与时间轴精准无偏差，任何片源不翻车。</p></div>
+      <div class="glass card rv" style="--d:.42s"><div class="ic s">容</div><h3>超多格式兼容</h3><p>SRT / ASS / SSA / VTT / SMI / SUB <b>一网打尽</b>，MKV 内嵌字幕还能<b>直接从容器里提取</b>，冷门老片也有字幕可用。</p></div>
+      <div class="glass card rv" style="--d:.48s"><div class="ic t">擎</div><h3>稀疏探测字幕引擎</h3><p>前端<b>稀疏探测字幕引擎</b>：按需探测、只处理当前需要的字幕段，长片、多字幕轨也<b>轻快不卡顿</b>。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 07 高画质 ============ -->
+<section class="slide s5">
+  <div class="wrap">
+    <span class="kicker rv" style="--d:.05s">04 · 高画质</span>
+    <h2 class="rv" style="--d:.12s">大会员画质，<em>全房间一起享受</em></h2>
+    <p class="lede rv" style="--d:.18s">只有你有 B 站大会员？没关系，<b>整个房间都能跟着看高画质</b>——走 CLI 模式几乎不费服务器流量，三种模式按需选择。</p>
+    <div class="hq">
+      <div class="glass hq-card rv" style="--d:.24s">
+        <span class="badge">推荐</span>
+        <h3>CLI 本地代理模式</h3>
+        <p>在你自己的电脑上跑一个小程序，用<b>你的大会员账号</b>在本地解析高画质片源，视频流直接送到每个人屏幕上。服务器只负责"喊话"，<b>一点带宽都不吃</b>，高码率大片随便放。</p>
+        <div class="quality-line"><span>1080P 高码率</span><span class="hot">4K 超清</span><span>高码率大片</span><span>零服务器流量</span></div>
+      </div>
+      <div class="glass hq-card rv" style="--d:.32s">
+        <span class="badge alt">备用</span>
+        <h3>服务器转发模式</h3>
+        <p>没跑 CLI 也不慌：服务器帮你把高画质视频流<b>中转给全房间</b>，画质照样拉满，只是更吃服务器带宽。多种模式<b>随时切换</b>，怎么方便怎么来。</p>
+        <div class="quality-line"><span>开箱即用</span><span>无需安装</span><span class="hot">全员高画质</span></div>
+      </div>
+      <div class="glass hq-card rv" style="--d:.4s">
+        <span class="badge alt">兜底</span>
+        <h3>MP4 直链转发模式</h3>
+        <p>B 站返回的 <b>MP4 直链地址</b>经后端代理转发后<b>直接播放</b>，不依赖 DASH 解析——兼容性最好，即点即看，<b>最高画质 720P</b>，作为前两种模式的稳妥兜底。</p>
+        <div class="quality-line"><span>直链播放</span><span class="hot">兼容性最佳</span><span>最高 720P</span><span>即点即看</span></div>
+      </div>
+    </div>
+    <p class="note rv" style="--d:.48s">CLI 与服务器转发基于 B 站 DASH 高画质片源，MP4 直链转发提供最佳兼容性兜底，三种模式按需切换。</p>
+  </div>
+</section>
+
+<!-- ============ 08 播放能力 ============ -->
+<section class="slide s-ply">
+  <div class="wrap">
+    <span class="kicker rv" style="--d:.05s">05 · 播放能力</span>
+    <h2 class="rv" style="--d:.12s">能直连的直连，<em>该转码的转码</em></h2>
+    <p class="lede rv" style="--d:.18s">ZViewer 按格式<b>智能选择播放引擎</b>：浏览器支持的原样直播，部分不支持的交给 playersvideo 在浏览器端转码——<b>服务器不装任何工具</b>。</p>
+    <div class="grid g2" style="margin-top:24px">
+      <div class="glass card rv" style="--d:.24s"><div class="ic">直</div><h3>原生直连 · video.js</h3><p>浏览器<b>原生支持</b>的格式——MP4、WebM 等——<b>直接交给 video.js 播放</b>：零转码、零等待，即点即看，稳稳当当。</p></div>
+      <div class="glass card rv" style="--d:.32s"><div class="ic s">转</div><h3>转码播放 · playersvideo</h3><p>遇到浏览器<b>部分不支持</b>的 MKV / AVI / TS / WMV，自动切到 <b>playersvideo 引擎</b>：解析容器、重封装后继续播，DTS / AC3 / EAC3 音轨<b>实时转 AAC</b>——全程在浏览器完成。</p></div>
+    </div>
+    <div class="flowline rv" style="--d:.4s; margin-top:18px">
+      <em>直连</em><span>MP4 / WebM 等支持的格式</span>→<span>video.js 直接播放</span>→<span>即点即看 ✓</span>
+    </div>
+    <div class="flowline rv" style="--d:.46s; margin-top:10px">
+      <em>转码</em><span>MKV / AVI / TS / WMV</span>→<span>playersvideo 解析容器</span>→<span>音轨实时转 AAC</span>→<span>重封装流畅播放 ✓</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 09 语音聊天 ============ -->
+<section class="slide s-voice">
+  <div class="wrap">
+    <span class="kicker rv" style="--d:.05s">06 · 语音聊天</span>
+    <h2 class="rv" style="--d:.12s">边看边聊，<em>吐槽不用切软件</em></h2>
+    <p class="lede rv" style="--d:.18s">房间内置<b>基于 LiveKit 的实时语音聊天</b>：看电影、听歌、共享屏幕时都能随时开口，<b>低延迟、更稳定、抗弱网</b>——不用再开别的语音软件。</p>
+    <div class="glass voice-mock rv" style="--d:.24s" aria-hidden="true">
+      <div class="voice-avs">
+        <span class="talking">我</span>
+        <span>A</span>
+        <span>B</span>
+        <span>C</span>
+      </div>
+      <div class="eq"><i style="height:100%"></i><i style="height:100%"></i><i style="height:100%"></i><i style="height:100%"></i><i style="height:100%"></i></div>
+      <div class="voice-status">
+        <div class="t">全房间语音已连接</div>
+        <div class="s">当前<b>「我」</b>正在说话 · <b>LiveKit 实时引擎</b> · 麦克风一键开关</div>
+      </div>
+      <span class="tag on">● 直播中</span>
+    </div>
+    <div class="grid g3" style="margin-top:18px">
+      <div class="glass card rv" style="--d:.3s"><div class="ic">稳</div><h3>LiveKit 实时引擎</h3><p>采用<b>实时通信 LiveKit</b>：低延迟、抗弱网、连接更稳，重连也能快速恢复，聊天不突兀。</p></div>
+      <div class="glass card rv" style="--d:.34s"><div class="ic s">轻</div><h3>轻量不抢网</h3><p>实时语音<b>只占一点点带宽</b>，你在看 4K 大片，聊天照样清晰不掉线。</p></div>
+      <div class="glass card rv" style="--d:.38s"><div class="ic t">麦</div><h3>麦克风一键开关</h3><p>想说话点开、想安静关掉，<b>隐私随时掌控</b>，不用退出房间。</p></div>
+      <div class="glass card rv" style="--d:.42s"><div class="ic">景</div><h3>什么场景都带你</h3><p><b>一起看、一起听、屏幕共享</b>全部自带语音——同一间房，聊到哪跟到哪。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10 一起听双音源 ============ -->
+<section class="slide s-dual">
+  <div class="wrap">
+    <span class="kicker rv" style="--d:.05s">07 · 一起听 · 双音源</span>
+    <h2 class="rv" style="--d:.12s">听歌不挑平台，<em>网易云 × 哔哩哔哩</em></h2>
+    <p class="lede rv" style="--d:.18s">"一起听"支持<b>网易云音乐与哔哩哔哩双音源兼容</b>：想听歌单还是想刷音乐区 MV，一间房全包。进度同步、切歌跟手，全房无缝跟切。</p>
+    <div class="grid g2" style="margin-top:20px">
+      <div class="glass card rv" style="--d:.24s"><div class="ic">网</div><h3>网易云音乐</h3><p><b>扫码登录</b>即用，海量曲库随点随听；<b>VIP 凭证全房共享</b>，音质按登录态自动切换音质；听到的歌<b>一键搜索、一键收藏</b>进歌单，种草不隔夜。</p></div>
+      <div class="glass card rv" style="--d:.3s"><div class="ic s">B</div><h3>哔哩哔哩</h3><p>音乐分区视频<b>直接当歌听</b>，配合<b>音乐分区屏蔽词</b>把不想要的内容挡在外面；喜欢的 MV / PV 还能设为歌词页<b>播放背景</b>，边听边看。</p></div>
+    </div>
+    <div class="glass switcher rv" style="--d:.36s" aria-hidden="true">
+      <div class="src-tabs"><span class="on">网易云音乐 · 正在播放</span><span>哔哩哔哩 · 一键切换</span></div>
+      <div class="nowbar"><span>某某歌曲</span><div class="bar"><i></i></div><small>02:14 / 04:30</small><span style="color:var(--primary)">全房同步中</span></div>
+    </div>
+    <div class="fmt-chips rv" style="--d:.42s">
+      <span class="hot">扫码登录</span><span>VIP 全房共享</span><span>音质自动降级</span><span>全房同步切歌</span><span>歌词逐句滚动</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 11 一键搜歌 ============ -->
+<section class="slide s6">
+  <div class="wrap">
+    <span class="kicker rv" style="--d:.05s">08 · 一起听 · 一键搜歌</span>
+    <h2 class="rv" style="--d:.12s">看完视频想听歌？<em>一键搜，一键藏</em></h2>
+    <p class="lede rv" style="--d:.18s">在"一起听"里播 B 站视频时，可以直接<b>拿视频标题去网易云一键搜索同名歌曲</b>，搜到还能<b>一键收藏</b>——当场种草，当场进歌单。</p>
+    <div class="flow">
+      <div class="glass step-card rv" style="--d:.24s">
+        <div class="n">STEP 1 · 正在播放</div>
+        <div class="mini-player">
+          <div class="t">【4K】某某歌曲 · 神级现场</div>
+          <div class="s">哔哩哔哩 · 一起听房间</div>
+          <div class="bar"><i></i></div>
+        </div>
+        <p style="font-size:13px;color:var(--ink-2)">视频看着看着，<b>好歌当场锁定</b>。</p>
+      </div>
+      <div class="arrow rv" style="--d:.3s">→</div>
+      <div class="glass step-card rv" style="--d:.36s">
+        <div class="n">STEP 2 · 一键搜索</div>
+        <div class="song-row">
+          <div class="cover"></div>
+          <div class="meta"><div class="t">某某歌曲（同名）</div><div class="s">网易云音乐 · 搜索结果第 1 位</div></div>
+        </div>
+        <p style="font-size:13px;color:var(--ink-2)">按视频标题<b>自动去网易云搜索</b>，不用手动复制粘贴。</p>
+      </div>
+      <div class="arrow rv" style="--d:.42s">→</div>
+      <div class="glass step-card rv" style="--d:.48s">
+        <div class="n">STEP 3 · 一键收藏</div>
+        <div class="song-row">
+          <div class="cover"></div>
+          <div class="meta"><div class="t">某某歌曲</div><div class="s">已加入你的网易云歌单</div></div>
+          <span class="fav">✓ 已收藏</span>
+        </div>
+        <p style="font-size:13px;color:var(--ink-2)">收藏动作<b>直接同步到网易云账号</b>，歌单原地更新。</p>
+      </div>
+    </div>
+    <div class="extra rv" style="--d:.54s">
+      <span class="tag on">扫码登录网易云</span>
+      <span class="tag">VIP 凭证全房共享</span>
+      <span class="tag">音质自动适配</span>
+      <span class="tag">全房同步听</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 12 歌词播放页 ============ -->
+<section class="slide s-lyr">
+  <div class="wrap">
+    <span class="kicker rv" style="--d:.05s">09 · 一起听 · 歌词播放页</span>
+    <h2 class="rv" style="--d:.12s">歌词页这一排按钮，<em>个个都有用</em></h2>
+    <p class="lede rv" style="--d:.18s">"一起听"的歌词播放页不只是看歌词——<b>推荐、双收藏夹、搜索、PV 背景</b>一排按钮全配齐，听完一首，下一首已经备好。</p>
+    <div class="glass player rv" style="--d:.24s">
+      <div class="disc" aria-hidden="true"></div>
+      <div class="lyric-main">
+        <div class="song">正在播放 · 某某歌曲</div>
+        <div class="artist">网易云音乐 · 一起听房间 · 歌词滚动中</div>
+        <div class="lyric-line">"就让我，一切随风吹向大海 ——"</div>
+        <div class="btnbar">
+          <span class="bb pri">↻ 自动推荐</span>
+          <span class="bb">♥ 收藏到 bilibili 收藏夹</span>
+          <span class="bb">★ 一键收藏 music 收藏夹</span>
+          <span class="bb">🔍 在网易云搜索</span>
+          <span class="bb">▶ 背景使用 B 站 PV</span>
+        </div>
+      </div>
+    </div>
+    <div class="grid g3" style="margin-top:18px">
+      <div class="glass card rv" style="--d:.3s"><div class="ic">荐</div><h3>播放列表自动推荐</h3><p>不知道下一首听什么？<b>播放列表自动补位推荐</b>，歌单永远不断档。</p></div>
+      <div class="glass card rv" style="--d:.34s"><div class="ic s">B</div><h3>收藏到 bilibili 收藏夹</h3><p>一键把正在听的歌收进 <b>bilibili 收藏夹</b>，刷到的好歌当场留住。</p></div>
+      <div class="glass card rv" style="--d:.38s"><div class="ic t">M</div><h3>一键收藏 music 收藏夹</h3><p>再按一下，同步收进 <b>music 收藏夹</b>——两个歌单各司其职。</p></div>
+      <div class="glass card rv" style="--d:.42s"><div class="ic">搜</div><h3>在网易云搜索</h3><p>在网易云中搜索<b>同步收藏的歌单</b>，收藏过的歌随时找回、随时再听。</p></div>
+      <div class="glass card rv" style="--d:.46s"><div class="ic s">PV</div><h3>背景使用 B 站 PV</h3><p>播放页背景一键切换成<b>哔哩哔哩 MV / PV</b>，边听歌边看画面。</p></div>
+      <div class="glass card rv" style="--d:.5s"><div class="ic t">词</div><h3>歌词同步滚动</h3><p>歌词逐句高亮滚动，和<b>全房间的播放进度</b>保持完全一致。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 13 分区屏蔽 ============ -->
+<section class="slide s-blk">
+  <div class="wrap">
+    <span class="kicker rv" style="--d:.05s">10 · 一起听 · 分区屏蔽</span>
+    <h2 class="rv" style="--d:.12s">音乐分区屏蔽，<em>还歌单一片清净</em></h2>
+    <p class="lede rv" style="--d:.18s">哔哩哔哩音乐分区的内容良莠不齐？<b>两级屏蔽词</b>把不想要的歌挡在列表外，听歌环境自己说了算。</p>
+    <div class="glass filter-mock rv" style="--d:.24s">
+      <div class="fi"><span>全局屏蔽词</span><span class="tagx">翻唱</span><span class="tagx">直播回放</span><b>命中即屏蔽</b></div>
+      <span class="tag on">音乐分区屏蔽 · 已开启</span>
+    </div>
+    <div class="grid g3" style="margin-top:16px">
+      <div class="glass card rv" style="--d:.3s"><div class="ic">全</div><h3>全局屏蔽词</h3><p>一处设置、<b>全站生效</b>：任何场景命中的内容都不会再出现在你的列表里。</p></div>
+      <div class="glass card rv" style="--d:.36s"><div class="ic s">分</div><h3>音乐分区屏蔽词</h3><p>音乐分区<b>单独一套词库</b>，只作用于听歌场景，和全局词互不干扰、层层把关。</p></div>
+      <div class="glass card rv" style="--d:.42s"><div class="ic t">逻</div><h3>实现逻辑</h3><p>自动识别 B 站<b>音乐分区内容</b>，叠加两级关键词匹配，<b>命中即在列表与推荐中过滤</b>。</p></div>
+    </div>
+    <div class="flowline rv" style="--d:.48s">
+      <span>B 站内容</span><em>→</em><span>识别音乐分区</span><em>→</em><span>全局屏蔽词匹配</span><em>→</em><span>分区屏蔽词匹配</span><em>→</em><span>命中过滤 ✓</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 14 个性化 ============ -->
+<section class="slide s-set">
+  <div class="wrap">
+    <span class="kicker rv" style="--d:.05s">11 · 个性化</span>
+    <h2 class="rv" style="--d:.12s">超多个性化设置，<em>每个角落都有开关</em></h2>
+    <p class="lede rv" style="--d:.18s">弹幕字幕的字体字号、一起听页面的背景氛围——<b>能想到的细节都留了调节入口</b>。</p>
+    <div class="set-panels">
+      <div class="glass panel rv" style="--d:.24s">
+        <h3>字体与字幕</h3>
+        <p class="pnote">弹幕、字幕各配一套字体与字号</p>
+        <div class="set-row"><span class="lbl">弹幕字体</span><div class="font-chips"><span class="on">默认</span><span>思源黑体</span><span>圆体</span><span>楷体</span></div></div>
+        <div class="set-row"><span class="lbl">字幕字体</span><div class="font-chips"><span class="on">跟随弹幕</span><span>独立设置</span></div></div>
+        <div class="set-row"><span class="lbl">字幕字号</span><div class="mini-slider"><i style="left:55%"></i></div><span>中</span></div>
+      </div>
+      <div class="glass panel rv" style="--d:.32s">
+        <h3>一起听 · 背景氛围</h3>
+        <p class="pnote">歌词播放页的每一层背景都能调</p>
+        <div class="set-row"><span class="lbl">封面模糊</span><div class="mini-slider"><i style="left:38%"></i></div></div>
+        <div class="set-row"><span class="lbl">视频背景模糊</span><div class="mini-slider"><i style="left:62%"></i></div></div>
+        <div class="set-row"><span class="lbl">背景压暗</span><div class="mini-slider"><i style="left:45%"></i></div></div>
+        <div class="set-row"><span class="lbl">UI 模糊浓度</span><div class="mini-slider"><i style="left:70%"></i></div></div>
+        <div class="set-row"><span class="lbl">背景显示方式</span><div class="font-chips"><span class="on">铺满裁剪</span><span>完整显示</span><span>模糊填充</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 15 主题 ============ -->
+<section class="slide s8">
+  <div class="wrap">
+    <span class="kicker rv" style="--d:.05s">12 · 颜值</span>
+    <h2 class="rv" style="--d:.12s">界面跟着你，<em>想怎么换就怎么换</em></h2>
+    <p class="lede rv" style="--d:.18s">Material You 动态主题：选一个颜色，整套界面跟着变。玻璃拟态质感、自定义背景图、强度随心调——<b>放映厅也要有自己的装修风格</b>。</p>
+    <div class="demo">
+      <div class="glass palette rv" style="--d:.24s">
+        <h3>主题色 · 一键全局</h3>
+        <div class="swatches" aria-hidden="true">
+          <span class="on" style="background:#005cbb"></span>
+          <span style="background:#f76f53"></span>
+          <span style="background:#2e7d32"></span>
+          <span style="background:#7b4eff"></span>
+          <span style="background:#ff69b4"></span>
+        </div>
+        <h3 style="margin-top:6px">颜色强度</h3>
+        <div class="pv-slider" aria-hidden="true"><i></i></div>
+        <p style="font-size:12.5px;color:var(--ink-2)">从淡淡的点缀到整屏浓郁，一根滑杆说了算。</p>
+      </div>
+      <div class="glass preview rv" style="--d:.32s">
+        <div class="pv-row">
+          <div class="pv-chip a">▶ 播放按钮 · 主题色跟随</div>
+          <div class="pv-chip b">玻璃卡片 · 毛玻璃质感</div>
+        </div>
+        <div class="pv-row">
+          <div class="pv-chip c">浅色 / 深色模式随你切换</div>
+          <div class="pv-chip b">自定义背景图</div>
+        </div>
+        <div class="pv-row">
+          <div class="pv-chip b">禁用 hover 位移</div>
+          <div class="pv-chip b">自定义圆角</div>
+        </div>
+        <p style="font-size:13px;color:var(--ink-2)">嫌动画太活泼？<b style="color:var(--primary)">精简动画</b>、<b style="color:var(--primary)">禁用 hover 位移</b>一键开启，再配上<b style="color:var(--primary)">自定义圆角</b>——界面风格自己说了算。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 16 细节网格 ============ -->
+<section class="slide s7">
+  <div class="wrap">
+    <span class="kicker rv" style="--d:.05s">13 · 细节控狂喜</span>
+    <h2 class="rv" style="--d:.12s">这些小地方，<em>都替你想好了</em></h2>
+    <div class="grid g3">
+      <div class="glass card rv" style="--d:.2s"><div class="ic">共</div><h3>屏幕共享</h3><p>想给朋友看别的？一键共享你的屏幕，OBS 直播也能接。</p></div>
+      <div class="glass card rv" style="--d:.25s"><div class="ic s">续</div><h3>房主掉线不断片</h3><p>房主临时离开，服务器守着进度；10 分钟没回来才自动关房。</p></div>
+      <div class="glass card rv" style="--d:.3s"><div class="ic t">评</div><h3>评论与弹幕</h3><p>片子下面可以留言评论，弹幕轨道随时开关。</p></div>
+      <div class="glass card rv" style="--d:.35s"><div class="ic">链</div><h3>直链自动续期</h3><p>网盘签名直链过期自动重新解析，追剧不中断。</p></div>
+      <div class="glass card rv" style="--d:.4s"><div class="ic s">审</div><h3>成员注册审核</h3><p>新成员注册先进审核队列，管理员通过才能入房，房间更安心。</p></div>
+      <div class="glass card rv" style="--d:.45s"><div class="ic t">更</div><h3>一键自动更新</h3><p>支持一键自动更新，数据配置原样保留，不用折腾。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 17 移动端 ============ -->
+<section class="slide s9">
+  <div class="wrap">
+    <span class="kicker rv" style="--d:.05s">14 · 随时随地</span>
+    <h2 class="rv" style="--d:.12s">手机电脑双端兼容，<em>一间房随便进</em></h2>
+    <p class="lede rv" style="--d:.18s">ZViewer 网页端<b>对手机端与电脑端 UI 双端深度兼容</b>：电脑上是大屏完整布局，手机上自动切换竖屏 / 横屏界面，<b>触屏手势、滑动调节音量进度</b>一应俱全——不用装插件，打开浏览器就是完整体验。</p>
+    <div class="phones rv" style="--d:.26s">
+      <div class="laptop">
+        <div class="screen"><div class="p"></div><div class="cap"><i></i></div></div>
+        <div class="base"></div>
+        <p class="device-label">电脑端 · 大屏完整布局</p>
+      </div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="screen"><div class="p"></div><div class="cap"><i></i></div></div>
+        <p class="device-label">手机竖屏 · 浏览与加入房间</p>
+      </div>
+      <div class="phone landscape">
+        <div class="notch"></div>
+        <div class="screen"><div class="p"></div><div class="cap"><i></i></div></div>
+        <p class="device-label">手机横屏 · 沉浸观影 + 手势</p>
+      </div>
+    </div>
+    <div class="glass app-banner rv" style="--d:.36s">
+      <div class="app-ic" aria-hidden="true"></div>
+      <div class="app-txt">
+        <div class="t">ZViewer 手机端 App · 独立开发中</div>
+        <div class="s">对<b>手机端更加适配</b>的独立应用正在开发，由 FredQin 负责开发。</div>
+      </div>
+      <a class="tag on" href="https://github.com/Zero-wyc/ZViewerAPP" target="_blank" rel="noopener">ZViewerAPP →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 18 结尾 ============ -->
+<section class="slide s10">
+  <div class="wrap">
+    <div class="logo-tri rv" style="--d:.05s"></div>
+    <h2 class="rv" style="--d:.14s">开一间房，<em>叫上朋友。</em></h2>
+    <p class="lede rv" style="--d:.22s">ZViewer · 一起看、一起听、一起追 —— 开源免费，自己部署，自己的共享空间自己做主。</p>
+    <div class="links rv" style="--d:.3s">
+      <a class="btn pri" href="https://github.com/Zero-wyc/ZViewer" target="_blank" rel="noopener">GitHub → Zero-wyc/ZViewer</a>
+      <a class="btn sec" href="https://docx.zviewer.zero251.xyz" target="_blank" rel="noopener">使用文档</a>
+      <a class="btn sec" href="https://github.com/Zero-wyc/ZViewer/releases" target="_blank" rel="noopener">下载体验</a>
+    </div>
+    <p class="fine rv" style="--d:.38s">MIT License · Open Source · Chrome / Edge 等 Chromium 浏览器体验最佳</p>
+  </div>
+</section>
+
+</div>
+
+<!-- ============ HUD ============ -->
+<div class="hud">
+  <div class="progress"><i id="pbar"></i></div>
+  <div class="brand-mark">ZViewer<i>.</i></div>
+  <button class="navbtn prev" id="prevBtn" aria-label="上一页">‹</button>
+  <button class="navbtn next" id="nextBtn" aria-label="下一页">›</button>
+  <div class="dots" id="dots"></div>
+  <div class="counter"><b id="cur">01</b><span>/</span><span id="total">18</span></div>
+</div>
+
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+  var dotsBox = document.getElementById("dots");
+  var pbar = document.getElementById("pbar");
+  var cur = document.getElementById("cur");
+  var total = document.getElementById("total");
+  var i = 0, locked = false;
+
+  total.textContent = String(slides.length).padStart(2, "0");
+
+  slides.forEach(function (_, n) {
+    var b = document.createElement("button");
+    b.setAttribute("aria-label", "第 " + (n + 1) + " 页");
+    b.addEventListener("click", function () { go(n); });
+    dotsBox.appendChild(b);
+  });
+  var dots = Array.prototype.slice.call(dotsBox.children);
+
+  function go(n) {
+    n = Math.max(0, Math.min(slides.length - 1, n));
+    if (n === i && slides[i].classList.contains("active")) { paint(); return; }
+    slides[i].classList.remove("active");
+    i = n;
+    slides[i].classList.add("active");
+    fit(slides[i]);
+    paint();
+  }
+  function paint() {
+    dots.forEach(function (d, n) { d.classList.toggle("on", n === i); });
+    cur.textContent = String(i + 1).padStart(2, "0");
+    pbar.style.width = ((i + 1) / slides.length * 100) + "%";
+  }
+  /* 内容超出视口时自动等比缩放，保证整页完整显示（适配小屏/录屏窗口） */
+  function fit(sl) {
+    var wrap = sl.querySelector(".wrap");
+    if (!wrap) return;
+    wrap.style.transform = "none";
+    var cs = getComputedStyle(sl);
+    var avail = sl.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    var h = Math.max(wrap.offsetHeight, wrap.scrollHeight);
+    if (avail > 0 && h > avail) {
+      var s = Math.max(0.55, avail / h);
+      wrap.style.transform = "scale(" + s + ")";
+    }
+  }
+  function step(dir) {
+    if (locked) return;
+    locked = true;
+    go(i + dir);
+    setTimeout(function () { locked = false; }, 380);
+  }
+
+  document.getElementById("prevBtn").addEventListener("click", function () { step(-1); });
+  document.getElementById("nextBtn").addEventListener("click", function () { step(1); });
+
+  document.addEventListener("keydown", function (e) {
+    if (["ArrowRight", "PageDown", " ", "Enter"].indexOf(e.key) > -1) { e.preventDefault(); step(1); }
+    else if (["ArrowLeft", "PageUp"].indexOf(e.key) > -1) { e.preventDefault(); step(-1); }
+    else if (e.key === "Home") { go(0); }
+    else if (e.key === "End") { go(slides.length - 1); }
+  });
+
+  /* 滚轮翻页（带节流，避免触控板连跳） */
+  var wheelLock = false;
+  document.addEventListener("wheel", function (e) {
+    if (wheelLock || Math.abs(e.deltaY) < 24) return;
+    wheelLock = true;
+    step(e.deltaY > 0 ? 1 : -1);
+    setTimeout(function () { wheelLock = false; }, 650);
+  }, { passive: true });
+
+  /* 触屏滑动 */
+  var tx = null;
+  document.addEventListener("touchstart", function (e) { tx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener("touchend", function (e) {
+    if (tx === null) return;
+    var dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 60) step(dx < 0 ? 1 : -1);
+    tx = null;
+  }, { passive: true });
+
+  paint();
+  fit(slides[i]);
+  window.addEventListener("resize", function () { fit(slides[i]); });
+  window.addEventListener("load", function () { fit(slides[i]); });
+})();
+</script>
+
+</body>
+</html>
