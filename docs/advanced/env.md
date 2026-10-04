@@ -34,14 +34,18 @@ ZViewer 的配置分两类：启动时读取的环境变量，以及运行时可
 
 | 变量 | 说明 | 默认值 |
 |---|---|---|
+| `LIVEKIT_API_KEY` | 接入凭证的签名密钥 | `devkey` |
+| `LIVEKIT_API_SECRET` | 接入凭证的签名密钥 | `zviewer-dev-secret` |
+| `LIVEKIT_API_HOST` | 服务端 API 与 `/rtc` 反代的上游地址 | `http://127.0.0.1:3336` |
+| `LIVEKIT_URL` | 客户端连接地址。留空时按请求头推导，跟随页面域名与协议 | 空（自动推导） |
 | `LIVEKIT_EXTERNAL` | 设为 `1` 时跳过内嵌服务，连接外置 LiveKit | `0` |
 | `LIVEKIT_BIND` | 内嵌服务的监听地址 | `::`（双栈） |
 | `LIVEKIT_NODE_IP` | ICE 广播地址（告知客户端向哪个地址建立媒体连接）。留空时自动启用 STUN 外部 IP 发现（要求服务器可出网）；NAT 复杂环境可手动指定公网 IP | 空（自动） |
-| `LIVEKIT_TURN_DOMAIN` | TURN/TLS 域名。与下面两项证书同时设置时，启用 TCP 5349 兜底中继，供 UDP 被拦截的网络使用；域名寻址不依赖公网 IP | — |
+| `LIVEKIT_TURN_DOMAIN` | TURN/TLS 域名。与 `LIVEKIT_TURN_CERT`、`LIVEKIT_TURN_KEY` 同时设置时，启用 TCP 5349 兜底中继，供 UDP 被拦截的网络使用；域名寻址不依赖公网 IP | — |
 | `LIVEKIT_TURN_CERT` | TURN TLS 证书路径（必须正式证书，自签证书不被浏览器 WebRTC 信任） | — |
 | `LIVEKIT_TURN_KEY` | TURN TLS 私钥路径 | — |
 
-UDP 直连与 TURN 中继并行尝试：TURN 只作兜底，不影响直连成功时的低延迟。
+UDP 直连与 TURN 中继并行尝试：TURN 只作兜底，不影响直连成功时的低延迟。变量之间的完整关系与启动过程见[语音聊天链路](/advanced/voice)。
 
 ## 前端构建
 

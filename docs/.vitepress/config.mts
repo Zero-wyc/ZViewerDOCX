@@ -95,6 +95,7 @@ export default defineConfig({
               items: [
                 { text: '架构总览', link: '/advanced/' },
                 { text: '房间同步逻辑', link: '/advanced/sync' },
+                { text: '语音聊天链路', link: '/advanced/voice' },
                 { text: '视频源与 API 获取逻辑', link: '/advanced/video-pipeline' },
                 { text: '一起听音乐管线', link: '/advanced/music-pipeline' },
                 { text: 'ZViewerCLI 代理协议', link: '/advanced/cli-protocol' },

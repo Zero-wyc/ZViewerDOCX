@@ -15,15 +15,18 @@ ZViewer 采用单进程架构，一个 Node.js 进程同时承担 API、前端�
    ├── Socket.IO        /socket.io    房间实时同步（maxHttpBufferSize 20MB）
    ├── 静态托管          frontend/dist + SPA 回退
    ├── /live 反代       → Node Media Server（内部 3335）
+   ├── /rtc 反代        → livekit-server（内部 3336，语音信令）
    └── 内嵌 NCM 服务     127.0.0.1:36530~36535（一起听音乐）
 RTMP 3334 → Node Media Server → FLV 3335（仅容器/本机内部）
+媒体 3333/udp → livekit-server（语音，详见拓展教程）
 ```
 
-三处端口的职责划分如下。
+四处端口的职责划分如下。
 
-- **单进程单端口**：生产模式所有流量走 3333（HTTP 与 HTTPS 二选一）。后端统一处理 API、前端静态资源、WebSocket 与 `/live` 反代，因此没有跨域问题。
+- **单进程单端口**：生产模式所有流量走 3333（HTTP 与 HTTPS 二选一）。后端统一处理 API、前端静态资源、WebSocket、`/live` 与 `/rtc` 反代，因此没有跨域问题。
 - **RTMP 3334 独立端口**：RTMP（Real-Time Messaging Protocol，推流用的 TCP 二进制协议）无法与 HTTP 复用端口，只能单独占用一个。拉流走内部 3335，由后端 `/live` 路径反代对外，Node Media Server 的端口无需暴露。
 - **内嵌 NCM 服务**：一起听音乐依赖的网易云 API 服务，由主后端进程内嵌启动，绑定 `127.0.0.1`；端口被占用时端口号 +1 重试，最多 5 次。详见[一起听音乐管线](/advanced/music-pipeline)。
+- **livekit-server 伴生进程**：语音聊天的实时音频由独立的 LiveKit 服务承载，主后端只签发凭证与执行管理动作。媒体走 3333/udp，信令经 `/rtc` 反代。详见[语音聊天链路](/advanced/voice)。
 
 ## Socket.IO 事件注册模型
 
@@ -65,6 +68,7 @@ actualCurrentTime = currentTime + (Date.now() - lastUpdatedAt) / 1000 × playbac
 | 数据库 | TypeORM + sql.js（wasm SQLite，无原生模块），可选 PostgreSQL |
 | 流媒体 | Node Media Server（RTMP / HTTP-FLV） |
 | 音视频 | 浏览器端重封装 / 转码（playsvideo，随前端资源分发） |
+| 语音 | LiveKit（livekit-server 伴生进程，WebRTC） |
 | 音乐 | @neteasecloudmusicapienhanced/api（内嵌 HTTP 服务） |
 | CLI | Go（独立仓库 ZViewerCLI） |
 
@@ -83,6 +87,7 @@ actualCurrentTime = currentTime + (Date.now() - lastUpdatedAt) / 1000 × playbac
 以下页面按子系统展开各自的实现细节。
 
 - [房间同步逻辑](/advanced/sync)
+- [语音聊天链路](/advanced/voice)
 - [视频源与 API 获取逻辑](/advanced/video-pipeline)
 - [一起听音乐管线](/advanced/music-pipeline)
 - [ZViewerCLI 代理协议](/advanced/cli-protocol)

@@ -95,6 +95,13 @@ seek 本身统一走 `executeSeek`（`seek-service.ts`）。目标落在缓冲�
 
 权限校验带 5s TTL 缓存（容量 1000，`room-permission.service.ts`），踢出、转交、会话结束时主动失效。管理员强制关房（HTTP 侧）时，先广播 `room-closed`，再 disconnect 房间内的 socket——否则客户端会自动重连，继续拉流。
 
+## 不走 Socket.IO 的实时能力
+
+房间同步之外还有两条独立链路，都不经过 Socket.IO，需要时从别处接入。
+
+- **语音聊天**：实时音频由独立的 LiveKit 服务承载，主后端只签发接入凭证并执行禁言、踢出。详见[语音聊天链路](/advanced/voice)。
+- **OBS 推流**：流媒体由 Node Media Server 处理，播放端是 HTTP-FLV 拉流，不占用 Socket.IO 通道。
+
 ## 观众端只读化与资源清理
 
 一起看模式下观众的控制权全部上交给房主，同时影片切换时必须及时掐断上一部影片的资源。这一节说明这两件事如何实现。
