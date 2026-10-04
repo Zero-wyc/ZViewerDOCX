@@ -7,6 +7,10 @@ hero:
   tagline: 让一群人在不同地点也能像坐在一起一样看番、看电影。房主控制播放进度，观众实时同步。
   actions:
     - theme: brand
+      text: 亮点展示
+      link: /zviewer-intro/index.html
+      target: _blank
+    - theme: alt
       text: 基础教程
       link: /basic/
     - theme: alt
@@ -15,10 +19,6 @@ hero:
     - theme: alt
       text: GitHub
       link: https://github.com/Zero-wyc/ZViewer
-    - theme: alt
-      text: 亮点展示
-      link: /zviewer-intro/index.html
-      target: _blank
 
 features:
   - icon: 🎬

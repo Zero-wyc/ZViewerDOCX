@@ -99,15 +99,17 @@ b { font-weight: 700; }
   opacity: 1; transform: none; pointer-events: auto; visibility: visible;
   transition: opacity 0.55s var(--ease), transform 0.55s var(--ease);
 }
-.wrap { width: 100%; max-width: 1180px; margin: 0 auto; transform-origin: center center; transition: transform 0.3s ease; }
+.wrap { width: 100%; max-width: 1180px; margin: 0 auto; transform-origin: center center; }
 
 /* 进入动画：子元素逐层升起（.rv + --d 延迟） */
-.slide .rv { opacity: 0; transform: translateY(26px); }
+/* .rv 基础态恒可见、无位移；隐藏与位移只存在于 rise 的 from 帧（backwards 填充 delay 期）。
+   to 帧与基础态一致，翻页切走时动画取消也不产生跳变，旧页内容随容器 opacity 平滑淡出，不会闪没。 */
 .slide.active .rv {
-  animation: rise 0.75s var(--ease) forwards;
+  animation: rise 0.75s var(--ease) backwards;
   animation-delay: var(--d, 0s);
 }
 @keyframes rise {
+  from { opacity: 0; transform: translateY(26px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -612,7 +614,6 @@ h2 em { font-style: normal; color: var(--primary); }
 /* ---------- 动效降级 ---------- */
 @media (prefers-reduced-motion: reduce) {
   .blob, .vplayer, .vmusic, .disc, .disc-mini, .s10 .logo-tri { animation: none !important; }
-  .slide .rv { opacity: 1; transform: none; }
   .slide.active .rv { animation: none; }
   .dm { animation-duration: 30s; }
 }
@@ -1183,8 +1184,8 @@ h2 em { font-style: normal; color: var(--primary); }
     if (n === i && slides[i].classList.contains("active")) { paint(); return; }
     slides[i].classList.remove("active");
     i = n;
+    fit(slides[i]); /* 在新页仍隐藏时完成缩放，避免与进场动画叠加导致抖动 */
     slides[i].classList.add("active");
-    fit(slides[i]);
     paint();
   }
   function paint() {
