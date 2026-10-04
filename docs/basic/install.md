@@ -49,7 +49,7 @@ docker run -d \
   -p 3333:3333 \
   -p 3333:3333/udp \
   -p 3334:3334 \
-  -v zviewer-data:/app/config \
+  -v /opt/zviewer/config:/app/config \
   zerowyc0721/zviewer:latest
 ```
 
@@ -63,14 +63,13 @@ services:
       - "3333:3333"      # 统一入口：页面、API、WebSocket、/live 拉流、/rtc 语音信令
       - "3333:3333/udp"  # 语音聊天媒体传输（与页面同号，协议不同）
       - "3334:3334"      # RTMP 推流
-      # - "3337:3337"    # 语音 TCP 传输模式的 ICE/TCP 直连：管理端切换「语音传输模式 = TCP」时取消注释
+      - "3337:3337"      # 语音 TCP 传输模式的 ICE/TCP 直连：管理端切换「语音传输模式 = TCP」时取消注释
     volumes:
-      - zviewer-data:/app/config
+      - ./zviewer-config:/app/config
     restart: unless-stopped
-
-volumes:
-  zviewer-data:
 ```
+
+- `volumes` 把容器内的 `/app/config` 挂到宿主机目录（compose 示例为文件同级的 `zviewer-config/`，docker run 示例为 `/opt/zviewer/config`，路径可自行更换）。数据库、证书、上传文件与推流切片都落在这个目录里，更换或升级镜像时数据不丢；`docker run` 的挂载路径必须写绝对路径。
 
 - `-p 3333:3333/udp` 承载语音聊天的 WebRTC 媒体流，缺少这条映射时语音无法互通。从旧版本升级的用户需在 compose 文件里补上这条映射。
 - 语音功能开箱即用：公网 IP 经 LiveKit（语音聊天的实时通信服务，内嵌于镜像）的 STUN 机制自动发现，信令地址按页面域名自动推导，无需任何配置。UDP 被运营商或企业防火墙拦截时，可在管理端「基础设置 → 语音传输模式」切换为 TCP——额外开启 `3337/tcp` 直连兜底，需放行该端口并在 compose 文件里取消 `3337` 映射的注释。
@@ -79,7 +78,7 @@ volumes:
 
 ## 数据持久化
 
-所有状态集中在 `config/` 目录（容器内 `/app/config`），更新不覆盖：
+所有状态集中在 `config/` 目录（容器内 `/app/config`，对应 compose 示例中宿主机的 `zviewer-config/` 目录），更新不覆盖：
 
 | 路径 | 内容 |
 |---|---|
