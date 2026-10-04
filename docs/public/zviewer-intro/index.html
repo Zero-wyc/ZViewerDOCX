@@ -155,17 +155,6 @@ h2 em { font-style: normal; color: var(--primary); }
 }
 .card .ic.s { background: var(--secondary-container); color: var(--on-secondary-container); }
 .card .ic.t { background: var(--tertiary-container); color: var(--on-tertiary-container); }
-
-/* 片源卡品牌色图标（近白淡色渐变 + 褪色中调字） */
-.card .ic.bili { background: linear-gradient(135deg, #fdf3f6, #fceff3); color: #d49ab0; box-shadow: none; }
-.card .ic.openlist { background: linear-gradient(135deg, #f3f8fe, #eaf2fd); color: #8fadd2; box-shadow: none; }
-.card .ic.emby { background: linear-gradient(135deg, #f2faf5, #e7f4ed); color: #86b899; box-shadow: none; }
-.card .ic.webdav { background: linear-gradient(135deg, #fef8f0, #fdf0e2); color: #d5a578; box-shadow: none; }
-.card .ic.mp4 { background: linear-gradient(135deg, #f0f9fa, #e6f4f6); color: #83b5be; box-shadow: none; }
-.card .ic.server { background: linear-gradient(135deg, #f2f5fe, #ebeffd); color: #93a0d4; box-shadow: none; }
-.card .ic.perm { background: linear-gradient(135deg, #f9f4fe, #f4ecfd); color: #b296d1; box-shadow: none; }
-.card .ic.netease { background: linear-gradient(135deg, #fef4f1, #fdece7); color: #d39b8f; box-shadow: none; }
-.card .ic.music { background: linear-gradient(135deg, #fefaf0, #fdf4e0); color: #c4ad72; box-shadow: none; }
 .card h3 { font-size: clamp(14px, 1.35vw, 16.5px); font-weight: 800; margin-bottom: 5px; letter-spacing: -0.01em; }
 .card p { font-size: clamp(12px, 1.12vw, 13.5px); color: var(--ink-2); line-height: 1.6; }
 .card p b { color: var(--primary); }
@@ -690,7 +679,7 @@ h2 em { font-style: normal; color: var(--primary); }
           <div class="vhead"><span>BV1xx411c7mD · 正在播放</span><span class="live">● 全房同步中</span></div>
           <span class="dm" style="top:22%; animation-duration:9s;">前方高能预警！！！</span>
           <span class="dm d2" style="top:38%; animation-duration:11s; animation-delay:-4s;">哈哈哈哈哈哈</span>
-          <span class="dm d3" style="top:54%; animation-duration:10s; animation-delay:-7s;">KKSK</span>
+          <span class="dm d3" style="top:54%; animation-duration:10s; animation-delay:-7s;">进度条一动全房都动</span>
           <div class="tri"></div>
           <div class="vbar"><i></i></div>
         </div>
@@ -728,17 +717,17 @@ h2 em { font-style: normal; color: var(--primary); }
     <p class="bigline rv" style="--d:.14s">可以把它看成一个<em>和朋友一起用的放映厅</em>：<br>开一间房，把链接发出去，<br>画面和歌曲就会在房间里保持同步。</p>
     <div class="grid g3">
       <div class="glass card rv" style="--d:.26s">
-        <div class="ic bili">房</div>
+        <div class="ic">房</div>
         <h3>一间房，一个节奏</h3>
         <p>房主点播放，房间里的画面与歌曲会一起走；暂停、拖进度、换内容时，其他人也会跟着切换。</p>
       </div>
       <div class="glass card rv" style="--d:.34s">
-        <div class="ic openlist">链</div>
+        <div class="ic s">链</div>
         <h3>一条链接</h3>
         <p>不用提前下载或传文件，B 站链接、网盘目录、媒体库都可以直接放进来。</p>
       </div>
       <div class="glass card rv" style="--d:.42s">
-        <div class="ic perm">屏</div>
+        <div class="ic t">屏</div>
         <h3>手机、电脑都能进</h3>
         <p>用浏览器打开即可，手机竖屏横屏都能用，不需要安装插件，也不要求对方熟悉技术。</p>
       </div>
@@ -753,13 +742,13 @@ h2 em { font-style: normal; color: var(--primary); }
     <h2 class="rv" style="--d:.12s">片源挂进来，<em>进度跟着走</em></h2>
     <p class="lede rv" style="--d:.18s">B 站追番、网盘剧集、自建媒体库都可以作为片源。<b>不管影片来自哪里，房间里的进度是一致的</b>；房主短暂掉线时，服务器会先维持住播放。</p>
     <div class="grid sources g3">
-      <div class="glass card rv" style="--d:.24s"><div class="ic bili">B</div><h3>哔哩哔哩</h3><p>输入 BV 号就能播，可以切换分 P 与清晰度，封面和弹幕会一并加载。</p></div>
-      <div class="glass card rv" style="--d:.29s"><div class="ic openlist">O</div><h3>OpenList / 网盘</h3><p>挂上网盘目录，剧集列表直接在房间里翻，点哪集看哪集。</p></div>
-      <div class="glass card rv" style="--d:.34s"><div class="ic emby">E</div><h3>Emby / Jellyfin</h3><p>媒体库整库接入，存储库选片，家里 NAS 变成共同片库。</p></div>
-      <div class="glass card rv" style="--d:.39s"><div class="ic webdav">W</div><h3>WebDAV / FTP</h3><p>常见的存储服务大多可以接入，<b>签名直链过期后会自动重新解析</b>。</p></div>
-      <div class="glass card rv" style="--d:.44s"><div class="ic mp4">M</div><h3>MP4 直链</h3><p>能在线访问的视频地址，都可以放进房间播放。</p></div>
-      <div class="glass card rv" style="--d:.49s"><div class="ic server">服</div><h3>服务器文件挂载</h3><p>可以<b>挂载服务器上的影片目录</b>，把本机硬盘里的片子直接作为房间片库，不需要再接入外部网盘。</p></div>
-      <div class="glass card rv" style="--d:.54s; grid-column: 1 / -1"><div class="ic perm">权</div><h3>想自己动手？</h3><p>观众可以<b>申请控制权</b>，房主同意后可以暂停、跳转；换片等操作仍由房主掌握，也可以随时收回。</p></div>
+      <div class="glass card rv" style="--d:.24s"><div class="ic">B</div><h3>哔哩哔哩</h3><p>输入 BV 号就能播，可以切换分 P 与清晰度，封面和弹幕会一并加载。</p></div>
+      <div class="glass card rv" style="--d:.29s"><div class="ic s">O</div><h3>OpenList / 网盘</h3><p>挂上网盘目录，剧集列表直接在房间里翻，点哪集看哪集。</p></div>
+      <div class="glass card rv" style="--d:.34s"><div class="ic t">E</div><h3>Emby / Jellyfin</h3><p>媒体库整库接入，存储库选片，家里 NAS 变成共同片库。</p></div>
+      <div class="glass card rv" style="--d:.39s"><div class="ic">W</div><h3>WebDAV / FTP</h3><p>常见的存储服务大多可以接入，<b>签名直链过期后会自动重新解析</b>。</p></div>
+      <div class="glass card rv" style="--d:.44s"><div class="ic s">M</div><h3>MP4 直链</h3><p>能在线访问的视频地址，都可以放进房间播放。</p></div>
+      <div class="glass card rv" style="--d:.49s"><div class="ic t">服</div><h3>服务器文件挂载</h3><p>可以<b>挂载服务器上的影片目录</b>，把本机硬盘里的片子直接作为房间片库，不需要再接入外部网盘。</p></div>
+      <div class="glass card rv" style="--d:.54s; grid-column: 1 / -1"><div class="ic">权</div><h3>想自己动手？</h3><p>观众可以<b>申请控制权</b>，房主同意后可以暂停、跳转；换片等操作仍由房主掌握，也可以随时收回。</p></div>
     </div>
   </div>
 </section>
@@ -785,17 +774,17 @@ h2 em { font-style: normal; color: var(--primary); }
       </div>
       <div class="side">
         <div class="glass card rv" style="--d:.28s">
-          <div class="ic bili">＋</div>
+          <div class="ic">＋</div>
           <h3>轨道自由组合</h3>
           <p>想开几条就开几条，各轨道互不影响，<b>弹幕数量自然会多起来</b>。</p>
         </div>
         <div class="glass card rv" style="--d:.34s">
-          <div class="ic openlist">文</div>
+          <div class="ic s">文</div>
           <h3>本地弹幕文件</h3>
           <p>本地的弹幕 XML / JSON 文件可以直接拖进来使用。</p>
         </div>
         <div class="glass card rv" style="--d:.4s">
-          <div class="ic emby">多</div>
+          <div class="ic t">多</div>
           <h3>同视频多挂 B 站弹幕</h3>
           <p>同一个视频可以添加<b>多条哔哩哔哩弹幕轨道</b>，同一作品的多个投稿或版本可以一起叠加。</p>
         </div>
@@ -817,16 +806,16 @@ h2 em { font-style: normal; color: var(--primary); }
     <h2 class="rv" style="--d:.12s">支持的字幕格式不少，<em>优先保证稳定</em></h2>
     <p class="lede rv" style="--d:.18s">字幕会先经过统一转换再渲染，因此不追求特效的原样复刻，换来的是<b>更广的格式兼容</b>与相对稳定的播放，渲染由前端<b>稀疏探测字幕引擎</b>负责。</p>
     <div class="sub-mock rv" style="--d:.24s; margin-top: 18px;">
-      <div class="line"><small>统一转换渲染 · Unified Rendering</small>"在人间回忆很多，分明或恍惚的轮廓。"</div>
+      <div class="line"><small>统一转换渲染 · Unified Rendering</small>"我陪你走到最后，能不能不要回头。"</div>
       <div class="cap"><i></i></div>
     </div>
     <div class="fmt-chips rv" style="--d:.3s">
       <span class="hot">SRT</span><span class="hot">ASS</span><span class="hot">SSA</span><span>VTT</span><span>SMI</span><span>SUB</span><span>MKV 内嵌字幕</span>
     </div>
     <div class="grid g3" style="margin-top:18px">
-      <div class="glass card rv" style="--d:.36s"><div class="ic webdav">换</div><h3>统一转换</h3><p>字幕先<b>统一转换</b>再渲染，ASS 花字、卡拉OK 之类的特效不会原样显示，文字内容与时间轴则保持一致。</p></div>
-      <div class="glass card rv" style="--d:.42s"><div class="ic openlist">容</div><h3>常见格式都能用</h3><p>SRT、ASS、SSA、VTT、SMI、SUB 等常见格式都可以使用，<b>MKV 内嵌字幕也能直接提取</b>。</p></div>
-      <div class="glass card rv" style="--d:.48s"><div class="ic server">擎</div><h3>稀疏探测字幕引擎</h3><p>前端<b>稀疏探测字幕引擎</b>按需处理当前需要的字幕段，长片或多字幕轨时更省资源。</p></div>
+      <div class="glass card rv" style="--d:.36s"><div class="ic">换</div><h3>统一转换</h3><p>字幕先<b>统一转换</b>再渲染，ASS 花字、卡拉OK 之类的特效不会原样显示，文字内容与时间轴则保持一致。</p></div>
+      <div class="glass card rv" style="--d:.42s"><div class="ic s">容</div><h3>常见格式都能用</h3><p>SRT、ASS、SSA、VTT、SMI、SUB 等常见格式都可以使用，<b>MKV 内嵌字幕也能直接提取</b>。</p></div>
+      <div class="glass card rv" style="--d:.48s"><div class="ic t">擎</div><h3>稀疏探测字幕引擎</h3><p>前端<b>稀疏探测字幕引擎</b>按需处理当前需要的字幕段，长片或多字幕轨时更省资源。</p></div>
     </div>
   </div>
 </section>
@@ -868,8 +857,8 @@ h2 em { font-style: normal; color: var(--primary); }
     <h2 class="rv" style="--d:.12s">能直连的直连，<em>该转码的转码</em></h2>
     <p class="lede rv" style="--d:.18s">播放时会按格式选择引擎：浏览器支持的格式直接播放，部分不支持的交给 playersvideo 在浏览器端处理，<b>服务器不需要安装转码工具</b>。</p>
     <div class="grid g2" style="margin-top:24px">
-      <div class="glass card rv" style="--d:.24s"><div class="ic openlist">直</div><h3>原生直连 · video.js</h3><p>浏览器<b>原生支持</b>的格式（MP4、WebM 等）<b>直接交给 video.js 播放</b>，不需要转码。</p></div>
-      <div class="glass card rv" style="--d:.32s"><div class="ic webdav">转</div><h3>转码播放 · playersvideo</h3><p>遇到浏览器<b>部分不支持</b>的 MKV / AVI / TS / WMV 时，会自动切换到 <b>playersvideo 引擎</b>，解析容器并重封装后播放；DTS / AC3 / EAC3 音轨会<b>实时转为 AAC</b>，整个过程在浏览器中完成。</p></div>
+      <div class="glass card rv" style="--d:.24s"><div class="ic">直</div><h3>原生直连 · video.js</h3><p>浏览器<b>原生支持</b>的格式（MP4、WebM 等）<b>直接交给 video.js 播放</b>，不需要转码。</p></div>
+      <div class="glass card rv" style="--d:.32s"><div class="ic s">转</div><h3>转码播放 · playersvideo</h3><p>遇到浏览器<b>部分不支持</b>的 MKV / AVI / TS / WMV 时，会自动切换到 <b>playersvideo 引擎</b>，解析容器并重封装后播放；DTS / AC3 / EAC3 音轨会<b>实时转为 AAC</b>，整个过程在浏览器中完成。</p></div>
     </div>
     <div class="flowline rv" style="--d:.4s; margin-top:18px">
       <em>直连</em><span>MP4 / WebM 等支持的格式</span>→<span>video.js 直接播放</span>→<span>直接播放 ✓</span>
@@ -901,10 +890,10 @@ h2 em { font-style: normal; color: var(--primary); }
       <span class="tag on">● 直播中</span>
     </div>
     <div class="grid g3" style="margin-top:18px">
-      <div class="glass card rv" style="--d:.3s"><div class="ic emby">稳</div><h3>LiveKit 实时引擎</h3><p>语音基于 <b>LiveKit 实时通信方案</b>，连接相对稳定，弱网与重连时的表现也比较好。</p></div>
-      <div class="glass card rv" style="--d:.34s"><div class="ic mp4">轻</div><h3>轻量不抢网</h3><p>实时语音占用的带宽不大，一边看高画质影片一边聊天，通常不会互相影响。</p></div>
-      <div class="glass card rv" style="--d:.38s"><div class="ic webdav">麦</div><h3>麦克风一键开关</h3><p>想说话时点开，想安静时关掉，不用退出房间。</p></div>
-      <div class="glass card rv" style="--d:.42s"><div class="ic perm">景</div><h3>什么场景都带你</h3><p><b>一起看、一起听、屏幕共享</b>时都可以使用语音。</p></div>
+      <div class="glass card rv" style="--d:.3s"><div class="ic">稳</div><h3>LiveKit 实时引擎</h3><p>语音基于 <b>LiveKit 实时通信方案</b>，连接相对稳定，弱网与重连时的表现也比较好。</p></div>
+      <div class="glass card rv" style="--d:.34s"><div class="ic s">轻</div><h3>轻量不抢网</h3><p>实时语音占用的带宽不大，一边看高画质影片一边聊天，通常不会互相影响。</p></div>
+      <div class="glass card rv" style="--d:.38s"><div class="ic t">麦</div><h3>麦克风一键开关</h3><p>想说话时点开，想安静时关掉，不用退出房间。</p></div>
+      <div class="glass card rv" style="--d:.42s"><div class="ic">景</div><h3>什么场景都带你</h3><p><b>一起看、一起听、屏幕共享</b>时都可以使用语音。</p></div>
     </div>
   </div>
 </section>
@@ -916,8 +905,8 @@ h2 em { font-style: normal; color: var(--primary); }
     <h2 class="rv" style="--d:.12s">听歌不挑平台，<em>网易云 × 哔哩哔哩</em></h2>
     <p class="lede rv" style="--d:.18s">"一起听"同时支持<b>网易云音乐与哔哩哔哩</b>两种音源：想听歌单或想刷音乐区 MV 都可以，切歌时房间成员会一起切换。</p>
     <div class="grid g2" style="margin-top:20px">
-      <div class="glass card rv" style="--d:.24s"><div class="ic netease">网</div><h3>网易云音乐</h3><p><b>扫码登录</b>即可使用，曲库丰富；<b>VIP 凭证在房间内共享</b>，音质会根据登录状态自动适配；听到喜欢的歌，可以<b>一键搜索并收藏</b>进歌单。</p></div>
-      <div class="glass card rv" style="--d:.3s"><div class="ic bili">B</div><h3>哔哩哔哩</h3><p>音乐分区的视频<b>可以直接当歌听</b>，配合<b>音乐分区屏蔽词</b>过滤不想要的内容；喜欢的 MV / PV 也可以设为歌词页<b>背景</b>。</p></div>
+      <div class="glass card rv" style="--d:.24s"><div class="ic">网</div><h3>网易云音乐</h3><p><b>扫码登录</b>即可使用，曲库比较全；<b>VIP 凭证在房间内共享</b>，音质会根据登录状态自动适配；听到喜欢的歌，可以<b>一键搜索并收藏</b>进歌单。</p></div>
+      <div class="glass card rv" style="--d:.3s"><div class="ic s">B</div><h3>哔哩哔哩</h3><p>音乐分区的视频<b>可以直接当歌听</b>，配合<b>音乐分区屏蔽词</b>过滤不想要的内容；喜欢的 MV / PV 也可以设为歌词页<b>背景</b>。</p></div>
     </div>
     <div class="glass switcher rv" style="--d:.36s" aria-hidden="true">
       <div class="src-tabs"><span class="on">网易云音乐 · 正在播放</span><span>哔哩哔哩 · 一键切换</span></div>
@@ -983,9 +972,9 @@ h2 em { font-style: normal; color: var(--primary); }
     <div class="glass player rv" style="--d:.24s">
       <div class="disc" aria-hidden="true"></div>
       <div class="lyric-main">
-        <div class="song">正在播放 · 花骨朵</div>
+        <div class="song">正在播放 · 某某歌曲</div>
         <div class="artist">网易云音乐 · 一起听房间 · 歌词滚动中</div>
-        <div class="lyric-line">"玩笑一般的，开在无人问津的枝头"</div>
+        <div class="lyric-line">"就让我，一切随风吹向大海 ——"</div>
         <div class="btnbar">
           <span class="bb pri">↻ 自动推荐</span>
           <span class="bb">♥ 收藏到 bilibili 收藏夹</span>
@@ -996,12 +985,12 @@ h2 em { font-style: normal; color: var(--primary); }
       </div>
     </div>
     <div class="grid g3" style="margin-top:18px">
-      <div class="glass card rv" style="--d:.3s"><div class="ic emby">荐</div><h3>播放列表自动推荐</h3><p>不知道下一首听什么时，<b>播放列表会给出推荐</b>。</p></div>
-      <div class="glass card rv" style="--d:.34s"><div class="ic bili">B</div><h3>收藏到 bilibili 收藏夹</h3><p>把正在听的歌<b>收进 bilibili 收藏夹</b>。</p></div>
-      <div class="glass card rv" style="--d:.38s"><div class="ic music">M</div><h3>一键收藏 music 收藏夹</h3><p>也可以同步收进 <b>music 收藏夹</b>，两个收藏夹按习惯分开使用。</p></div>
-      <div class="glass card rv" style="--d:.42s"><div class="ic netease">搜</div><h3>在网易云搜索</h3><p>在网易云中搜索<b>同步收藏的歌单</b>，之前收藏的歌可以随时找回。</p></div>
-      <div class="glass card rv" style="--d:.46s"><div class="ic openlist">PV</div><h3>背景使用 B 站 PV</h3><p>播放页背景可以切换为<b>哔哩哔哩 MV / PV</b>。</p></div>
-      <div class="glass card rv" style="--d:.5s"><div class="ic perm">词</div><h3>歌词同步滚动</h3><p>歌词逐句高亮滚动，与<b>房间的播放进度</b>保持一致。</p></div>
+      <div class="glass card rv" style="--d:.3s"><div class="ic">荐</div><h3>播放列表自动推荐</h3><p>不知道下一首听什么时，<b>播放列表会给出推荐</b>。</p></div>
+      <div class="glass card rv" style="--d:.34s"><div class="ic s">B</div><h3>收藏到 bilibili 收藏夹</h3><p>把正在听的歌<b>收进 bilibili 收藏夹</b>。</p></div>
+      <div class="glass card rv" style="--d:.38s"><div class="ic t">M</div><h3>一键收藏 music 收藏夹</h3><p>也可以同步收进 <b>music 收藏夹</b>，两个收藏夹按习惯分开使用。</p></div>
+      <div class="glass card rv" style="--d:.42s"><div class="ic">搜</div><h3>在网易云搜索</h3><p>在网易云中搜索<b>同步收藏的歌单</b>，之前收藏的歌可以随时找回。</p></div>
+      <div class="glass card rv" style="--d:.46s"><div class="ic s">PV</div><h3>背景使用 B 站 PV</h3><p>播放页背景可以切换为<b>哔哩哔哩 MV / PV</b>。</p></div>
+      <div class="glass card rv" style="--d:.5s"><div class="ic t">词</div><h3>歌词同步滚动</h3><p>歌词逐句高亮滚动，与<b>房间的播放进度</b>保持一致。</p></div>
     </div>
   </div>
 </section>
@@ -1017,9 +1006,9 @@ h2 em { font-style: normal; color: var(--primary); }
       <span class="tag on">音乐分区屏蔽 · 已开启</span>
     </div>
     <div class="grid g3" style="margin-top:16px">
-      <div class="glass card rv" style="--d:.3s"><div class="ic server">全</div><h3>全局屏蔽词</h3><p>在一处设置后<b>全局生效</b>，命中的内容不会再出现在列表里。</p></div>
-      <div class="glass card rv" style="--d:.36s"><div class="ic bili">分</div><h3>音乐分区屏蔽词</h3><p>音乐分区可以<b>单独设置一套词库</b>，只作用于听歌场景，与全局词互不影响。</p></div>
-      <div class="glass card rv" style="--d:.42s"><div class="ic mp4">逻</div><h3>实现逻辑</h3><p>先识别哔哩哔哩<b>音乐分区内容</b>，再做两级关键词匹配，<b>命中的内容会从列表和推荐中过滤掉</b>。</p></div>
+      <div class="glass card rv" style="--d:.3s"><div class="ic">全</div><h3>全局屏蔽词</h3><p>在一处设置后<b>全局生效</b>，命中的内容不会再出现在列表里。</p></div>
+      <div class="glass card rv" style="--d:.36s"><div class="ic s">分</div><h3>音乐分区屏蔽词</h3><p>音乐分区可以<b>单独设置一套词库</b>，只作用于听歌场景，与全局词互不影响。</p></div>
+      <div class="glass card rv" style="--d:.42s"><div class="ic t">逻</div><h3>实现逻辑</h3><p>先识别哔哩哔哩<b>音乐分区内容</b>，再做两级关键词匹配，<b>命中的内容会从列表和推荐中过滤掉</b>。</p></div>
     </div>
     <div class="flowline rv" style="--d:.48s">
       <span>B 站内容</span><em>→</em><span>识别音乐分区</span><em>→</em><span>全局屏蔽词匹配</span><em>→</em><span>分区屏蔽词匹配</span><em>→</em><span>命中过滤 ✓</span>
@@ -1099,12 +1088,12 @@ h2 em { font-style: normal; color: var(--primary); }
     <span class="kicker rv" style="--d:.05s">13 · 细节控狂喜</span>
     <h2 class="rv" style="--d:.12s">一些容易被忽略的小地方</h2>
     <div class="grid g3">
-      <div class="glass card rv" style="--d:.2s"><div class="ic perm">共</div><h3>屏幕共享</h3><p>可以把屏幕共享给房间成员，也支持接入 OBS 直播。</p></div>
-      <div class="glass card rv" style="--d:.25s"><div class="ic emby">续</div><h3>房主掉线不断片</h3><p>房主临时离开时，服务器会先维持进度，超过 10 分钟未返回才自动关房。</p></div>
-      <div class="glass card rv" style="--d:.3s"><div class="ic bili">评</div><h3>评论与弹幕</h3><p>影片下方可以留言评论，弹幕轨道可以随时开关。</p></div>
-      <div class="glass card rv" style="--d:.35s"><div class="ic webdav">链</div><h3>直链自动续期</h3><p>网盘签名直链过期后会自动重新解析。</p></div>
-      <div class="glass card rv" style="--d:.4s"><div class="ic openlist">审</div><h3>成员注册审核</h3><p>新成员注册后会进入审核队列，通过后可以加入房间。</p></div>
-      <div class="glass card rv" style="--d:.45s"><div class="ic mp4">更</div><h3>一键自动更新</h3><p>支持一键更新，数据与配置会保留。</p></div>
+      <div class="glass card rv" style="--d:.2s"><div class="ic">共</div><h3>屏幕共享</h3><p>可以把屏幕共享给房间成员，也支持接入 OBS 直播。</p></div>
+      <div class="glass card rv" style="--d:.25s"><div class="ic s">续</div><h3>房主掉线不断片</h3><p>房主临时离开时，服务器会先维持进度，超过 10 分钟未返回才自动关房。</p></div>
+      <div class="glass card rv" style="--d:.3s"><div class="ic t">评</div><h3>评论与弹幕</h3><p>影片下方可以留言评论，弹幕轨道可以随时开关。</p></div>
+      <div class="glass card rv" style="--d:.35s"><div class="ic">链</div><h3>直链自动续期</h3><p>网盘签名直链过期后会自动重新解析。</p></div>
+      <div class="glass card rv" style="--d:.4s"><div class="ic s">审</div><h3>成员注册审核</h3><p>新成员注册后会进入审核队列，通过后可以加入房间。</p></div>
+      <div class="glass card rv" style="--d:.45s"><div class="ic t">更</div><h3>一键自动更新</h3><p>支持一键更新，数据与配置会保留。</p></div>
     </div>
   </div>
 </section>
