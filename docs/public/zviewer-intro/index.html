@@ -826,12 +826,12 @@ h2 em { font-style: normal; color: var(--primary); }
   <div class="wrap">
     <span class="kicker rv" style="--d:.05s">04 · 高画质</span>
     <h2 class="rv" style="--d:.12s">大会员画质，<em>全房间一起享受</em></h2>
-    <p class="lede rv" style="--d:.18s">如果房间里只有你有大会员，其他成员也可以跟着看高画质。<b>CLI 模式几乎不占服务器流量</b>，三种模式可以按需选择。</p>
+    <p class="lede rv" style="--d:.18s">高画质有三种实现方式：CLI 模式下视频流由各成员本机直连 Bilibili，<b>几乎不占服务器流量</b>；服务器转发可以让全房间共享高画质，代价是占用带宽。三种模式可以按需切换。</p>
     <div class="hq">
       <div class="glass hq-card rv" style="--d:.24s">
         <span class="badge">推荐</span>
         <h3>CLI 本地代理模式</h3>
-        <p>在本地运行一个 CLI 小程序，用<b>你自己的大会员账号</b>解析片源，视频流从本地分发给各个成员。服务器只承担信令，<b>几乎不消耗带宽</b>。</p>
+        <p>每个成员在本地各自运行一个 CLI 小程序，用<b>自己的 Bilibili 账号</b>解析片源，视频流由本机代理<b>直接从 B 站拉取</b>，不经过服务器。服务器只承担同步信令，<b>几乎不消耗带宽</b>。</p>
         <div class="quality-line"><span>1080P 高码率</span><span class="hot">4K 超清</span><span>高码率大片</span><span>几乎不占服务器流量</span></div>
       </div>
       <div class="glass hq-card rv" style="--d:.32s">
