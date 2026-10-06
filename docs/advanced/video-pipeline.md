@@ -54,6 +54,23 @@ B站允许的清晰度取决于账号身份。下表列出三种身份各自的�
 
 B站 API 的公共请求封装为：Chrome 120 UA、`Referer/Origin: https://www.bilibili.com`、单请求 10s 超时，遇到 **412 风控自动重试 3 次（1~2s 随机退避）**。
 
+### 番剧与影视（PGC）
+
+ep / ss 链接（番剧、影视剧集）走一条独立的解析管线，与普通视频并列。
+
+- **链接识别**：`/bangumi/play/ep829609`、`/bangumi/play/ss45612` 显式路径直接命中；裸 `ep123` / `ss456` 仅在无 BV / av 上下文且紧邻字符不是字母数字时认定（避免 `step1`、`sleep2` 之类误匹配），BV / av 优先。
+- **整季分集**：ep 号先换整季信息（`pgc/view/web/season`），返回全部分集的 ep_id、cid、badge 与权威时长；badge（`会员` / `限免` / 空）用于前端标注会员专享集；仅 status=2（已上线）的分集可选。
+- **播放地址**：走 PGC 专用 playurl 端点（`pgc/player/web/playurl`，SESSDATA Cookie 鉴权，无 WBI 签名）。dash / durl 结构与普通视频一致，仅响应载荷在顶层 `result`（普通视频在 `data`），归一化后共用下游处理。
+- **试看判定不依赖 timelength**：会员专享集对非会员账号返回试看 MP4，且 API 把 timelength 虚报为完整时长——试看状态由解析结果显式标记，不做时长比对。
+- **错误归一**：-403（付费 / 大会员专享）、-404（已下架）、-10403（地区限制）统一转为解析错误码。
+- **防盗链**：PGC 的 MP4 直链强制 B站 Referer，直接由服务器代理转发，不走浏览器直连。
+
+### 解析身份与默认模式
+
+- **锚定房主 Cookie**：服务器侧解析默认以影片所属房间**房主的 B站 Cookie 身份**执行——房主为大会员时，会员内容全房间都能拿到完整地址，观众身份不参与服务器解析（机制详见[拓展教程 · ZViewer CLI 代理协议](/advanced/cli-protocol)）。多 P 视频切分 P 后解析显式携带 page 定位目标分 P，缓存 key 含 page 维度，不同分 P 互不命中。
+- **影片级「仅允许CLI模式」**：番剧 / 影视可开启 cliOnly——成员必须连接本机 ZViewer CLI 观看，媒体流不经服务器转发，服务器仅承担同步信令；CLI 未连接时直接给出安装引导，不回退服务器转发。解析请求本身仍走服务器（ep 链接解析锚定房主 Cookie，属信令级请求）。
+- **默认解析参数**（管理端基础设置）：普通视频默认 MP4 / DASH（`bilibiliDefaultParseMode`，默认 mp4）；番剧影视默认 MP4 / DASH / 仅CLI（`bilibiliPgcDefaultMode`，默认 mp4）。影片未显式配置解析偏好时按此回落。
+
 ## 代理层 `/api/stream/proxy*`
 
 浏览器直接请求 B站媒体会被防盗链和 CORS 挡住，代理层就是为了绕开这两点。它统一由 `proxyHttpUpstream`（`services/proxy/http-proxy.ts`）实现，规则如下。

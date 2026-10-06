@@ -38,7 +38,7 @@ CI 下 LiveKit 下载失败会直接硬失败，保证每个构建产物都包�
 2. 检测到新版本后，先下载（带进度与阶段提示，支持 CDN 加速），再校验。
 3. 替换程序文件后，直接在容器或进程内重启后端，**不重启整个容器**。保留 `--restart unless-stopped` 以应对异常退出。
 4. `config/` 目录（数据库、证书、上传、切片、JWT 密钥文件）在更新全程不会被覆盖——只要备份这一个目录，就能完整迁移实例。
-5. 也可以在管理后台上传压缩包手动更新。
+5. 也可以在管理后台上传压缩包手动更新。解压不依赖系统的 unzip：Linux 分支用 adm-zip 纯 Node 实现（早期版本在精简容器镜像里调用系统命令会失败）。
 
 ## 本地开发
 
@@ -86,4 +86,4 @@ ZViewer/
 └── build-all.js      # 单文件编译脚本
 ```
 
-CLI 客户端在独立仓库 [ZViewerCLI](https://github.com/Zero-wyc/ZViewerCLI)（Go 编写），协议见 [ZViewerCLI 代理协议](/advanced/cli-protocol)。
+CLI 客户端在独立仓库 [ZViewer CLI](https://github.com/Zero-wyc/ZViewerCLI)（Go 编写），协议见 [ZViewer CLI 代理协议](/advanced/cli-protocol)。

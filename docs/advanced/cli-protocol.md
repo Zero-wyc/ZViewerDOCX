@@ -1,6 +1,6 @@
-# ZViewerCLI 代理协议
+# ZViewer CLI 代理协议
 
-[ZViewerCLI](https://github.com/Zero-wyc/ZViewerCLI) 是一个 Go 编写的独立仓库。它通过 Socket.IO（一种在 WebSocket 之上实现实时双向通信的库）与服务器通信，为浏览器提供两样能力：使用本机 Bilibili Cookie，以及把媒体流经本机代理转发。Cookie 只保存在用户本机，不经过服务器。
+[ZViewer CLI](https://github.com/Zero-wyc/ZViewerCLI) 是一个 Go 编写的独立仓库。它通过 Socket.IO（一种在 WebSocket 之上实现实时双向通信的库）与服务器通信，为浏览器提供两样能力：使用本机 Bilibili Cookie，以及把媒体流经本机代理转发。Cookie 只保存在用户本机，不经过服务器。
 
 ## 注册流程（v0.2.0 去房间化）
 
@@ -45,7 +45,7 @@ CLI 在本机启动一个 HTTP 服务，浏览器通过它取到带 Cookie 的�
 浏览器 <video>/<audio>
    │  http://127.0.0.1:9333/proxy?url=...
    ▼
-ZViewerCLI 本地 HTTP 代理
+ZViewer CLI 本地 HTTP 代理
    │  注入本地 Bilibili Cookie + Referer / Origin / User-Agent
    ▼
 Bilibili CDN（up to 大会员档位）
@@ -58,6 +58,8 @@ Bilibili CDN（up to 大会员档位）
 - **清晰度档位。** `qn` 是 B站表示清晰度的档位号，取值 127(8K)/126(杜比)/125(HDR)/120(4K)/116/112/80/74/64/32/16。请求参数为 `fnval = 16 | (VIP ? 128 : 0)`，qn=127 时再追加 8K 标志位；会员档白名单是 `[112,116,120,125,126,127]`。MP4 直链最高支持 1080P（`mp4MaxQn=80`）。
 
 - **服务端的 `/api/cli/resolve`。** 这个接口用 CLI 请求头里自带的 B站 Cookie 做解析（Cookie 需含 SESSDATA），并设置 `skipCdnCheck: true`。实际视频流由用户本机浏览器经 CLI 拉取，服务器不需要校验 CDN 可达性，这样可以避免远程网络差异造成的错误降级。
+
+- **服务器解析锚定房主 Cookie。** 所有服务器侧解析（含观众 CLI 未连接时的 MP4 兜底解析）默认以影片所属房间**房主的 B站 Cookie 身份**执行（后端按 movieId 查房间归属）：房主为大会员时，会员专享内容全房间都能拿到完整地址，观众自己的登录身份不再参与服务器解析。显式传 `useHostCookie: false` 可退回请求者自身身份。成员走本地 CLI 时不受影响——CLI 始终使用观众自己配置的 Cookie。
 
 - **非会员的档位保护。** 前端开启 CLI 且代理在线时会查询会员状态。如果用户不是会员却选了会员档（qn > 80），会自动回落到 0，也就是跟随账号默认档位。
 

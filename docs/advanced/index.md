@@ -36,7 +36,7 @@ Socket.IO 是服务端与浏览器之间的双向实时通道，房间同步的�
 
 连接鉴权在 `io.use` 中间件完成（`backend/src/index.ts`），JWT（JSON Web Token，登录后签发的身份令牌）的取用分两种情况：
 
-- `handshake.auth.agent === 'zcontrol-cli'` 的连接直接放行，并标记 `isCliAgent`。CLI 代理的角色见 [ZViewerCLI 代理协议](/advanced/cli-protocol)。
+- `handshake.auth.agent === 'zcontrol-cli'` 的连接直接放行，并标记 `isCliAgent`。CLI 代理的角色见 [ZViewer CLI 代理协议](/advanced/cli-protocol)。
 - 其余连接按 **cookie 头 → `handshake.auth.token` → `handshake.query.token`** 的顺序取 JWT 校验，失败则拒绝握手。WebSocket 与 REST 共用同一套身份体系。
 
 ## 状态分层：内存权威副本 + 数据库节流落盘
@@ -70,7 +70,7 @@ actualCurrentTime = currentTime + (Date.now() - lastUpdatedAt) / 1000 × playbac
 | 音视频 | 浏览器端重封装 / 转码（playsvideo，随前端资源分发） |
 | 语音 | LiveKit（livekit-server 伴生进程，WebRTC） |
 | 音乐 | @neteasecloudmusicapienhanced/api（内嵌 HTTP 服务） |
-| CLI | Go（独立仓库 ZViewerCLI） |
+| CLI | Go（独立仓库 ZViewer CLI） |
 
 ## 贯穿全局的设计取舍
 
@@ -90,7 +90,7 @@ actualCurrentTime = currentTime + (Date.now() - lastUpdatedAt) / 1000 × playbac
 - [语音聊天链路](/advanced/voice)
 - [视频源与 API 获取逻辑](/advanced/video-pipeline)
 - [一起听音乐管线](/advanced/music-pipeline)
-- [ZViewerCLI 代理协议](/advanced/cli-protocol)
+- [ZViewer CLI 代理协议](/advanced/cli-protocol)
 - [主题系统实现](/advanced/theme-system)
 - [HTTPS 证书](/advanced/https)
 - [鉴权与权限模型](/advanced/auth)

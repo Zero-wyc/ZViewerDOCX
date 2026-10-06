@@ -43,7 +43,7 @@ livekit-server 是独立的 Go 二进制，无法嵌入 pkg 打包出的单文�
 
 游客身份不落库，因此同一游客反复进出房间会在 LiveKit 侧留下多条记录，直到房间销毁。令牌本身由 `LIVEKIT_API_KEY` 与 `LIVEKIT_API_SECRET` 签名，未配置这两个变量时接口返回 503，前端提示语音未就绪。
 
-**客户端地址按请求头推导**，不写在服务端配置里。优先取 `LIVEKIT_URL`；未配置时从 `x-forwarded-host` / `x-forwarded-proto` 或 `Host` 头推导协议与域名，HTTPS 页面自动得到 `wss://`，反代与 CDN 场景因此无需额外配置。这样做是为了避开在容器或多网卡环境探测本机 IP——探测结果通常是 Docker bridge 网段（`172.24.x.x`），浏览器根本不可达。
+**客户端连接地址按三级优先级确定**。管理端「基础设置 → 自定义 LiveKit 服务器地址」运行时可配，填写后（如 `wss://livekit.example.com`）优先于一切自动行为，适用于外置或独立部署的 LiveKit 服务器（需与该服务器使用相同的 API Key/Secret，否则令牌验签失败）。未填写时优先取环境变量 `LIVEKIT_URL`；仍未配置时从 `x-forwarded-host` / `x-forwarded-proto` 或 `Host` 头推导协议与域名，HTTPS 页面自动得到 `wss://`，反代与 CDN 场景因此无需额外配置。自动推导是为了避开在容器或多网卡环境探测本机 IP——探测结果通常是 Docker bridge 网段（`172.24.x.x`），浏览器根本不可达。
 
 > 一个容易踩的坑：新版 SDK 的 `token.toJwt()` 返回 Promise，必须 `await`。直接取同步值会序列化成 `[object Object]`，LiveKit 侧一律返回 401。
 
@@ -115,13 +115,15 @@ livekit-server 的启动参数如下（UDP 模式，默认）。
 livekit-server --dev --bind :: --port 3336 --udp-port 3333 --keys "<key>: <secret>"
 ```
 
-管理端把语音传输模式切换为 TCP 时，参数追加 `--tcp-port 3337`（详见「语音传输模式」一节）。
+管理端把语音传输模式切换为 TCP 时，启动参数不变——ICE/TCP 端口经环境变量 `LIVEKIT_RTC_TCP_PORT` 注入子进程（详见「语音传输模式」一节）。
 
 `--bind ::` 以双栈监听，同时收 IPv4 与 IPv6（IPv4 连接以 v4-mapped 形式进入）。绑定 `0.0.0.0` 只会收到 IPv4，公网 IPv6 用户的媒体流将无法建立。若所在环境没有 IPv6 协议栈导致绑定 `::` 失败，程序自动回退 `0.0.0.0` 重试一次，代价是 IPv6 媒体不可用但语音整体可用。
 
 `--keys` 的格式要求冒号后必须带一个空格，缺空格时 livekit-server 会直接退出。启动后轮询 3336 端口等待就绪，超时 15s 判定失败。
 
 程序为子进程注册 `exit`、`SIGINT`、`SIGTERM` 三个钩子，主进程退出时一并终止。
+
+启动时还有一道**外网可达性自检**：本机网卡全为私网地址（RFC1918 / 回环 / CGNAT 等）且未配置 `LIVEKIT_NODE_IP` 与 TURN 时，启动日志输出显式警告。场景是「局域网语音正常、外网连不上」——页面与信令经 EdgeOne/CDN/反向代理正常工作，但 WebRTC 媒体（UDP/TCP）不经过七层代理，属于静默失败。日志给出三条解决路径：部署到有公网 IP 的主机并放行 3333/udp；用 frp 等穿透映射 3333/udp 并设 `LIVEKIT_NODE_IP`；或配置 TURN/TLS 三项并映射 5349/tcp。例外：云服务器 EIP 场景网卡是私网但 STUN 可探测到公网 IP，警告可忽略。
 
 各项配置的缺省值如下表，显式配置优先于缺省值。
 
@@ -143,9 +145,9 @@ livekit-server --dev --bind :: --port 3336 --udp-port 3333 --keys "<key>: <secre
 | 模式 | livekit-server 启动参数 | 部署侧要求 |
 |---|---|---|
 | UDP（默认） | `--udp-port 3333` | 放行 3333/udp |
-| TCP | `--udp-port 3333` + `--tcp-port 3337` | 额外放行 3337/tcp（Docker 需补端口映射） |
+| TCP | `--udp-port 3333`，另注入环境变量 `LIVEKIT_RTC_TCP_PORT` | 额外放行 3337/tcp（Docker 需补端口映射） |
 
-TCP 模式开启 LiveKit 原生 ICE/TCP 直连：服务器同时广播 UDP 与 TCP 两路候选，由浏览器 ICE 自动选路——UDP 可用时走低延迟直连，被运营商或企业防火墙拦截时自动经 3337/tcp 连接媒体。UDP 通道始终开启（LiveKit 不支持禁用 UDP 候选），因此 TCP 模式是「加开兜底」而非「替换」；端口号可用环境变量 `LIVEKIT_RTC_TCP_PORT` 覆盖。
+TCP 模式开启 LiveKit 原生 ICE/TCP 直连：服务器同时广播 UDP 与 TCP 两路候选，由浏览器 ICE 自动选路——UDP 可用时走低延迟直连，被运营商或企业防火墙拦截时自动经 3337/tcp 连接媒体。UDP 通道始终开启（LiveKit 不支持禁用 UDP 候选），因此 TCP 模式是「加开选项」而非「替换」。端口号默认 3337，注意 livekit-server 没有对应的命令行参数（v1.13.7 传 `--tcp-port` 会报 `flag provided but not defined` 直接退出），只能经 `LIVEKIT_RTC_TCP_PORT` 环境变量下发：TCP 模式启动时注入，切回 UDP 时删除，避免热重启残留。
 
 TCP 直连与 TURN/TLS 中继解决的是同一类问题（UDP 被拦截），机制不同：
 
@@ -158,6 +160,8 @@ TCP 直连与 TURN/TLS 中继解决的是同一类问题（UDP 被拦截），�
 
 二者可以同时部署，客户端按连通性自动选择。
 
+语音面板会实时显示当前媒体走的传输协议徽标（UDP 或 TCP）：前端周期轮询 `RTCPeerConnection.getStats()`，解析 ICE 实际选中的候选线路，跟随真实路径而非设置值。
+
 ## 故障排查
 
 下表按现象列出常见原因与处理方式。
@@ -169,6 +173,7 @@ TCP 直连与 TURN/TLS 中继解决的是同一类问题（UDP 被拦截），�
 | 页面在 HTTPS 下报混合内容 | `/rtc` 信令未反代 | 确认反代把 `/rtc` 转发到主端口 3333 |
 | 连接后立刻被断开 | 令牌序列化错误 | 检查是否 `await` 了 `token.toJwt()` |
 | 只有 IPv6 用户连不上 | 监听地址绑到了 `0.0.0.0` | 确认 `LIVEKIT_BIND` 保持 `::` |
+| 局域网语音正常，外网用户连不上 | 服务器网卡全为私网地址且未配置 `LIVEKIT_NODE_IP` 与 TURN，WebRTC 媒体不经七层代理 | 启动日志有显式警告；按日志给出的三条路径处理（公网 IP / frp 映射 3333/udp / TURN 中继） |
 | 管理员禁言无效 | 目标已不在语音房间 | 禁言接口在参与者列表中找不到目标时返回 404 |
 
 ## 常量速查

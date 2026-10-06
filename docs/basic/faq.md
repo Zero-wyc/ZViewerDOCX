@@ -37,7 +37,7 @@ WebRTC 的 `getUserMedia`（浏览器获取麦克风/摄像头的接口）要求
 
 - 检查后端是否正确携带 Referer 等请求头。
 - 封面与视频地址通过后端代理获取，规避 CORS 与防盗链问题。
-- 大会员专享内容需在后台配置有效的 Bilibili 登录凭证，或使用 [ZViewerCLI 本地代理](/basic/cli)。
+- 大会员专享内容需在后台配置有效的 Bilibili 登录凭证，或使用 [ZViewer CLI 本地代理](/basic/cli)。
 
 ## 房主离线后房间会怎样
 
