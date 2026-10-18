@@ -10,17 +10,14 @@ ZViewer 是多人同步观影、追番与远程共享平台。日常安装与使
 
 ### 2. 启动
 
-```bash
-# Windows：双击 start.bat 进入交互菜单，选 1 启动
-start.bat start
+- **Windows**：双击 `start.bat`，进入交互菜单
+- **Linux**：执行 `./start.sh`，进入交互菜单
 
-# Linux
-./start.sh start
-```
+菜单中选 `1` 启动服务，访问 `http://localhost:3333`。各项含义见[安装与部署](/basic/install#交互菜单)。
 
 ### 3. 登录
 
-访问 `http://localhost:3333`。首次启动自动创建超级管理员 `root` / `root`，登录后请立即改密：右上角用户菜单 → 个人资料 → 编辑信息 → 修改密码。
+首次启动自动创建超级管理员 `root` / `root`，登录后请立即改密：右上角用户菜单 → 个人资料 → 编辑信息 → 修改密码。
 
 ### 4. 创建房间
 
