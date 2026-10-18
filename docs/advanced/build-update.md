@@ -1,14 +1,10 @@
 # 构建与更新机制
 
-本页说明 ZViewer 如何编译打包、CI 如何发布版本，以及程序怎样自动更新到新版本。末尾还附上本地开发命令与项目目录结构。
+编译打包、CI 发布与自动更新的实现，末尾附本地开发命令与目录结构。
 
 ## 构建
 
-构建由 `build-all.js` 完成，它把前后端编译成单个平台可执行文件。
-
-`build-all.js` 使用 esbuild 打包（pkg 打包目标为 node26）并把资源内联：后端被打包成一个可执行二进制（内含 wasm sql.js 与内嵌的 NCM 服务依赖），前端静态资源随后端一起分发。构建时还会下载 LiveKit 伴生二进制随包分发，语音聊天开箱即用。运行时由同一个进程同时提供 HTTP、WebSocket 与静态托管，并按需拉起 livekit-server 子进程。
-
-各平台的产物如下。
+由 `build-all.js` 完成：用 esbuild 打包（pkg 目标 node26）并把资源内联，后端打成单个可执行二进制（内含 wasm sql.js 与内嵌 NCM 服务依赖），前端静态资源随后端分发。构建时下载 LiveKit 伴生二进制随包分发。运行时同一进程提供 HTTP、WebSocket 与静态托管，并按需拉起 livekit-server 子进程。
 
 | 平台 | 产物 |
 |---|---|
@@ -16,11 +12,9 @@
 | Windows | `zviewer-backend.exe`、`zviewer-cert.exe`、`livekit-server.exe`、`start.bat` → `zviewer-windows-x64.zip` |
 | Docker | `zerowyc0721/zviewer:latest`（Linux 单文件镜像，内嵌 LiveKit） |
 
-`zviewer-cert` 是配套的证书工具（用于生成和安装自签 HTTPS 证书），详见 [HTTPS 证书](/advanced/https)。
+`zviewer-cert` 是证书工具，详见 [HTTPS 证书](/advanced/https)。
 
 ## CI（GitHub Actions）
-
-持续集成由 GitHub Actions 承担，不同的触发方式对应不同的版本号与产物。
 
 | 触发 | 版本号 | 产物 |
 |---|---|---|
@@ -28,17 +22,15 @@
 | tag `v*` | 正式版 | GitHub Release（双平台压缩包 + Docker） |
 | 手动触发 | `0.0.0-manual` | artifact |
 
-CI 下 LiveKit 下载失败会直接硬失败，保证每个构建产物都包含完整的语音能力。
+CI 下 LiveKit 下载失败会硬失败，保证产物都含完整语音能力。
 
 ## 自动更新
 
-自动更新由后端处理，全程不需要重启整个容器。
-
-1. 后端定期调用 GitHub Releases API 检查新版本（管理后台可以关闭预发布接收）。
-2. 检测到新版本后，先下载（带进度与阶段提示，支持 CDN 加速），再校验。
-3. 替换程序文件后，直接在容器或进程内重启后端，**不重启整个容器**。保留 `--restart unless-stopped` 以应对异常退出。
-4. `config/` 目录（数据库、证书、上传、切片、JWT 密钥文件）在更新全程不会被覆盖——只要备份这一个目录，就能完整迁移实例。
-5. 也可以在管理后台上传压缩包手动更新。解压不依赖系统的 unzip：Linux 分支用 adm-zip 纯 Node 实现（早期版本在精简容器镜像里调用系统命令会失败）。
+1. 后端定期调用 GitHub Releases API 检查新版本（管理后台可关闭预发布接收）。
+2. 检测到新版本后下载（带进度与阶段提示，支持 CDN 加速）并校验。
+3. 替换程序文件后重启后端进程，**不重启容器**；保留 `--restart unless-stopped` 应对异常退出。
+4. `config/`（数据库、证书、上传、切片、JWT 密钥）全程不覆盖，备份这一个目录即可完整迁移。
+5. 也可在管理后台上传压缩包手动更新。解压不依赖系统 unzip：Linux 分支用 adm-zip 纯 Node 实现（精简容器镜像里调用系统命令会失败）。
 
 ## 本地开发
 
@@ -51,9 +43,9 @@ npm run dev:backend    # 仅后端（3333，热重载）
 npm run dev:frontend   # 仅前端（5174，HMR）
 ```
 
-前端通过 Vite 代理把 `/api`、`/socket.io`、`/live` 转发到后端，因此不需要配置 `VITE_API_URL`。
+Vite 会把 `/api`、`/socket.io`、`/live` 代理到后端，无需配置 `VITE_API_URL`。
 
-提交前请运行以下校验命令。
+提交前运行：
 
 ```bash
 cd frontend && npx tsc --noEmit      # 类型检查
@@ -61,8 +53,6 @@ cd frontend && npx eslint <改动文件>  # 改动文件 0 错 0 警
 ```
 
 ## 项目结构
-
-项目的目录结构如下。
 
 ```
 ZViewer/
@@ -78,12 +68,12 @@ ZViewer/
 │   └── src/
 │       ├── pages/           # 页面
 │       ├── components/      # 通用 UI（Header / Layout / ThemeProvider …）
-│       ├── modules/         # 音乐 / 房间 / 一起看 / 播放器 / 字幕 / 弹幕 等功能模块
+│       ├── modules/         # 音乐 / 房间 / 一起看 / 播放器 / 字幕 / 弹幕
 │       ├── store/           # Zustand 状态（themeStore / authStore / roomStore …）
-│       └── lib/             # Monet 派生、对比度、鉴权通道、MKV demux 等基础库
+│       └── lib/             # Monet 派生、对比度、鉴权通道、MKV demux 等
 ├── packaging/        # 启动脚本模板
 ├── docker/           # Docker 入口脚本
 └── build-all.js      # 单文件编译脚本
 ```
 
-CLI 客户端在独立仓库 [ZViewer CLI](https://github.com/Zero-wyc/ZViewerCLI)（Go 编写），协议见 [ZViewer CLI 代理协议](/advanced/cli-protocol)。
+CLI 客户端在独立仓库 [ZViewer CLI](https://github.com/Zero-wyc/ZViewerCLI)（Go），协议见 [CLI 代理协议](/advanced/cli-protocol)。
