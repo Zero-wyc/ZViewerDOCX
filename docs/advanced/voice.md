@@ -1,12 +1,12 @@
 # 语音聊天链路
 
-语音聊天不承担播放同步的职责，因此它不经过 Socket.IO，而是走一条独立的实时音频链路。本页说明这条链路的构成：谁处理音频、连接怎么建立、管理动作如何生效，以及部署时哪些环节会退化。功能层面的说明见[功能说明](/basic/features)，端口映射与变量清单见[安装与部署](/basic/install)与[环境变量](/advanced/env)。
+语音不参与播放同步，因此不走 Socket.IO，而是独立的实时音频链路。功能说明见[功能说明](/basic/features)，端口映射见[安装与部署](/basic/install)，变量清单见[环境变量](/advanced/env)。
 
 ## 音频由独立服务承载
 
-实时音频交给 LiveKit 处理。LiveKit 是开源的 WebRTC 实时通信服务，媒体形态为 SFU（Selective Forwarding Unit，选择性转发单元）：每个客户端把自己的音频上传一份，服务端只做转发不做混流，因此上行带宽随人数线性增长而不会互相干扰。
+实时音频交给 LiveKit（开源 WebRTC 实时通信服务），媒体形态为 SFU：每个客户端上传一份音频，服务端只转发不混流。
 
-主后端不参与音频流转，只负责三件事：签发接入凭证、执行禁言与踢出、代理信令。整体拓扑如下。
+主后端不参与音频流转，只做三件事：签发接入凭证、执行禁言与踢出、代理信令。
 
 ```
 浏览器 ── POST /api/voice/token ──▶ 后端（3333）── 签发 AccessToken
@@ -16,42 +16,36 @@
                   （UDP 被拦截时：ICE/TCP 3337 直连，或 TURN/TLS 5349 中继）
 ```
 
-各端口的职责如下表。
-
 | 端口 | 协议 | 用途 |
 |---|---|---|
 | 3333 | TCP | 页面、REST API、Socket.IO，以及 `/rtc` 信令反代 |
-| 3333 | UDP | 语音媒体（RTP），与页面同号不同协议 |
-| 3337 | TCP | ICE/TCP 媒体直连，管理端把语音传输模式切到 TCP 时启用（按需） |
+| 3333 | UDP | 语音媒体（RTP） |
+| 3337 | TCP | ICE/TCP 媒体直连，传输模式为 TCP 时启用（按需） |
 | 3336 | TCP | livekit-server 的 HTTP 与信令端口，仅内部使用 |
-| 5349 | TCP | TURN/TLS 中继，UDP 被拦截时的兜底通道，需显式配置 |
+| 5349 | TCP | TURN/TLS 中继，UDP 被拦截时的兜底，需显式配置 |
 
-livekit-server 是独立的 Go 二进制，无法嵌入 pkg 打包出的单文件产物，因此以伴生进程的形式随主进程启停：单文件版由 `build-all.js` 把二进制分发到可执行文件旁边，容器版内嵌在镜像里。开发模式下若二进制缺失，程序会自动从 GitHub Releases 下载到 `backend/dev-bin/`。
+livekit-server 是独立 Go 二进制，无法嵌入 pkg 单文件产物，因此以伴生进程随主进程启停：单文件版由 `build-all.js` 分发到可执行文件旁，容器版内嵌在镜像里；开发模式缺失时自动从 GitHub Releases 下载到 `backend/dev-bin/`。
 
 ## 接入凭证
 
-浏览器加入语音前先向后端换一个令牌，这个令牌是客户端连接 LiveKit 的唯一凭证。接口为 `POST /api/voice/token`，请求体带 `roomId` 与 `username`，需要登录态。
+加入语音前先换令牌，接口 `POST /api/voice/token`（请求体带 `roomId` 与 `username`，需登录），这是连接 LiveKit 的唯一凭证。
 
-服务端把 ZViewer 房间映射为 LiveKit 房间，房间名固定为 `voice:<roomId>` 前缀，不同 ZViewer 房间之间彼此隔离。签发的令牌声明一份 grant（授权范围），授予接入、发布、订阅与数据通道四项权限。
-
-参与者的身份（identity）按登录态分两种规则，重连时的行为不同。
+ZViewer 房间映射为 LiveKit 房间，名为 `voice:<roomId>`，不同房间彼此隔离。令牌 grant 授予接入、发布、订阅与数据通道四项权限。
 
 | 身份 | 生成规则 | 重连行为 |
 |---|---|---|
 | 登录用户 | `user:<userId>` | 身份稳定，重连后顶替自己上一条麦克风轨 |
 | 游客 | `guest:<时间戳36进制><4位随机>` | 每次加入都是新身份，不顶替他人 |
 
-游客身份不落库，因此同一游客反复进出房间会在 LiveKit 侧留下多条记录，直到房间销毁。令牌本身由 `LIVEKIT_API_KEY` 与 `LIVEKIT_API_SECRET` 签名，未配置这两个变量时接口返回 503，前端提示语音未就绪。
+游客身份不落库，反复进出会在 LiveKit 侧留下多条记录直到房间销毁。令牌由 `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` 签名，未配置时接口返回 503，前端提示语音未就绪。
 
-**客户端连接地址按三级优先级确定**。管理端「基础设置 → 自定义 LiveKit 服务器地址」运行时可配，填写后（如 `wss://livekit.example.com`）优先于一切自动行为，适用于外置或独立部署的 LiveKit 服务器（需与该服务器使用相同的 API Key/Secret，否则令牌验签失败）。未填写时优先取环境变量 `LIVEKIT_URL`；仍未配置时从 `x-forwarded-host` / `x-forwarded-proto` 或 `Host` 头推导协议与域名，HTTPS 页面自动得到 `wss://`，反代与 CDN 场景因此无需额外配置。自动推导是为了避开在容器或多网卡环境探测本机 IP——探测结果通常是 Docker bridge 网段（`172.24.x.x`），浏览器根本不可达。
+**客户端连接地址按三级优先级确定**：管理端「基础设置 → 自定义 LiveKit 服务器地址」（如 `wss://livekit.example.com`，需与该服务器使用相同 API Key/Secret）→ 环境变量 `LIVEKIT_URL` → 从 `x-forwarded-host` / `x-forwarded-proto` 或 `Host` 头推导（HTTPS 页面自动得到 `wss://`，反代与 CDN 无需额外配置）。自动推导可避开容器 / 多网卡环境下探测到 Docker bridge 网段（`172.24.x.x`）的错误结果。
 
-> 一个容易踩的坑：新版 SDK 的 `token.toJwt()` 返回 Promise，必须 `await`。直接取同步值会序列化成 `[object Object]`，LiveKit 侧一律返回 401。
+> 新版 SDK 的 `token.toJwt()` 返回 Promise，必须 `await`；直接取同步值会序列化成 `[object Object]`，LiveKit 侧一律 401。
 
 ## 采集与发布
 
-麦克风采集使用 `getUserMedia`，开启回声消除、降噪与自动增益，并强制单声道。这三项处理由浏览器完成，不占用服务器算力。
-
-采集到的音频流进入一条 48kHz 的 `AudioContext` 节点链，`micGain` 负责输入音量，之后分流到三个终点。
+麦克风经 `getUserMedia` 采集，开启回声消除、降噪与自动增益，强制单声道，处理全在浏览器完成。音频进入 48kHz 的 `AudioContext` 节点链，`micGain` 控制输入音量，之后分流三路：
 
 ```
 麦克风 ──▶ micGain ──┬──▶ produceDest ──▶ 发布轨（送往 LiveKit）
@@ -59,36 +53,34 @@ livekit-server 是独立的 Go 二进制，无法嵌入 pkg 打包出的单文�
                      └──▶ analyser（电平可视化）
 ```
 
-音频上下文**不强制指定采样率**。声卡硬件速率不尽相同（蓝牙 HFP 常见 44.1kHz），强行重采样到 48kHz 会形成采集与上下文两级的双重转换，反送与发布会出现周期性卡顿。LiveKit 对采集速率没有要求，用硬件默认值即可。
+音频上下文**不强制指定采样率**：声卡硬件速率不同（蓝牙 HFP 常见 44.1kHz），强转 48kHz 会形成两级重采样，反送与发布出现周期性卡顿；LiveKit 对采集速率无要求。
 
-发布时指定编码档位，参数直接决定听感。
-
-| 参数 | 取值 | 原因 |
+| 发布参数 | 取值 | 原因 |
 |---|---|---|
-| `audioPreset` | `music` | SDK 默认按语音会议档编码（约 24~32kbps），听感发闷；`music` 档为 48kbps 全带宽 Opus |
-| `dtx` | `false` | 关闭静默段 discontinuous transmission，避免静音段落切换时的音质劣化 |
+| `audioPreset` | `music` | 默认语音会议档约 24~32kbps 听感发闷；`music` 档为 48kbps 全带宽 Opus |
+| `dtx` | `false` | 关闭静默段传输，避免切换时音质劣化 |
 | `red` | `true` | 保留 RED 冗余编码抵抗丢包 |
 
-**自闭麦**（本地静音）只需把发布轨的 `enabled` 置为 false，不发任何服务端请求。管理员禁言则是另一套机制，见「禁言与踢出」一节。
+**自闭麦**只把发布轨 `enabled` 置 false，不发服务端请求；管理员禁言是另一套机制，见下文。
 
 ## 收听与成员状态
 
-远端音频轨不直接出声，而是为每个成员创建一个隐藏的 `<audio>` 元素承载。成员列表在参与者连接、断开、metadata 变更时刷新；每个成员还挂一个 `AnalyserNode`（`fftSize` 为 256、平滑系数 0.6）仅用于电平可视化，不参与发声。
+远端音频轨由每个成员一个隐藏 `<audio>` 元素承载。成员列表在连接、断开、metadata 变更时刷新；每个成员另挂 `AnalyserNode`（`fftSize` 256、平滑系数 0.6）仅用于电平可视化。
 
-音量分两层：全局音量乘以单成员音量，两者相乘后写入该成员的 `<audio>.volume`。
+音量分两层：全局音量 × 单成员音量，结果写入该成员 `<audio>.volume`。
 
-反送（自己听见自己）按浏览器分别处理。Chrome 走媒体元素路径；Firefox 播放实时 `MediaStream` 有缓冲积压缺陷会卡顿，改走 `AudioContext` 直连输出。反送默认关闭。
+反送按浏览器分别处理：Chrome 走媒体元素路径；Firefox 播放实时 `MediaStream` 有缓冲积压缺陷，改走 `AudioContext` 直连输出。反送默认关闭。
 
 ## 禁言与踢出
 
-管理动作通过 REST 接口执行，权限在服务端校验。禁言采用双通道强制，客户端无法绕过。
+管理动作走 REST，权限在服务端校验。禁言双通道强制，客户端无法绕过：
 
-1. **服务器侧静音**：服务端调用 `mutePublishedTrack` 把目标成员已发布的所有音频轨静音。这是服务端操作，与客户端状态无关。
-2. **metadata 标记**：服务端把参与者 metadata 写为 `{"adminMuted": true}`。成员列表据此渲染 UI，被禁言者的客户端收到 `ParticipantMetadataChanged` 事件后锁定麦克风并提示，解禁时自动恢复。
+1. **服务器侧静音**：调用 `mutePublishedTrack` 静音目标成员已发布的所有音频轨。
+2. **metadata 标记**：参与者 metadata 写为 `{"adminMuted": true}`，成员列表据此渲染 UI；被禁言端收到 `ParticipantMetadataChanged` 后锁定麦克风并提示，解禁自动恢复。
 
-禁言期间该成员无法自行开麦。踢出则直接调用 `removeParticipant`，被踢者的客户端收到 `Disconnected` 事件后复位界面。
+踢出直接调用 `removeParticipant`，被踢端收到 `Disconnected` 后复位界面。
 
-三处权限判定的口径与房间管理一致：root、本人为主房主的 admin、房主、房管（`Room.moderators` 数组中包含该用户）。
+三处权限口径与房间管理一致：root、本人为主房主的 admin、房主、房管（`Room.moderators` 含该用户）。
 
 | 接口 | 动作 | 权限 |
 |---|---|---|
@@ -98,87 +90,77 @@ livekit-server 是独立的 Go 二进制，无法嵌入 pkg 打包出的单文�
 
 ## 信令反代
 
-LiveKit 的信令走两条通道，主后端都要代理，否则浏览器连不上。
+两条通道都要代理，否则浏览器连不上：
 
-- **HTTP 通道**：客户端连接前先发 `GET /rtc/v1/validate` 校验令牌，这是普通 HTTP 请求。HTTPS 页面下若不经代理，混合内容策略会直接拦截。
-- **WebSocket 通道**：后续信令帧通过 `/rtc` 的 HTTP Upgrade 升级为 WebSocket。升级后的帧是不透明字节流，主后端只做裸 TCP 双向管道，不解析协议。
+- **HTTP**：连接前先 `GET /rtc/v1/validate` 校验令牌，HTTPS 页面下不经代理会被混合内容策略拦截。
+- **WebSocket**：后续信令帧经 `/rtc` 的 HTTP Upgrade 升级，升级后是不透明字节流，主后端只做裸 TCP 双向管道。
 
-`upgrade` 事件处理器只放行两类路径：以 `/socket.io` 开头的交给 Socket.IO 自行处理，以 `/rtc` 开头的隧道到 livekit-server，其余连接一律销毁。上游地址每次升级时从 `LIVEKIT_API_HOST` 解析（裸机为 `127.0.0.1:3336`，compose 部署为 `livekit:3336`），以兼容运行时注入的环境变量。
+`upgrade` 处理器只放行两类路径：`/socket.io` 交给 Socket.IO，`/rtc` 隧道到 livekit-server，其余一律销毁。上游地址每次升级时从 `LIVEKIT_API_HOST` 解析（裸机 `127.0.0.1:3336`，compose 为 `livekit:3336`）。
 
 ## 内嵌服务的启动与降级
 
-启动流程在数据库初始化之后触发：先从系统设置读取语音传输模式（udp/tcp），再以 fire-and-forget 方式拉起子进程，不阻塞主服务。下载二进制期间 `/api/voice/token` 返回 503，前端提示语音未就绪。
+启动在数据库初始化之后触发：先读系统设置里的传输模式（udp/tcp），再以 fire-and-forget 拉起子进程，不阻塞主服务。下载二进制期间 `/api/voice/token` 返回 503。
 
-livekit-server 的启动参数如下（UDP 模式，默认）。
+UDP 模式（默认）的启动参数：
 
 ```
 livekit-server --dev --bind :: --port 3336 --udp-port 3333 --keys "<key>: <secret>"
 ```
 
-管理端把语音传输模式切换为 TCP 时，启动参数不变——ICE/TCP 端口经环境变量 `LIVEKIT_RTC_TCP_PORT` 注入子进程（详见「语音传输模式」一节）。
+TCP 模式参数不变——ICE/TCP 端口经环境变量 `LIVEKIT_RTC_TCP_PORT` 注入子进程。
 
-`--bind ::` 以双栈监听，同时收 IPv4 与 IPv6（IPv4 连接以 v4-mapped 形式进入）。绑定 `0.0.0.0` 只会收到 IPv4，公网 IPv6 用户的媒体流将无法建立。若所在环境没有 IPv6 协议栈导致绑定 `::` 失败，程序自动回退 `0.0.0.0` 重试一次，代价是 IPv6 媒体不可用但语音整体可用。
+- `--bind ::` 双栈监听 IPv4 与 IPv6；绑 `0.0.0.0` 只会收到 IPv4，公网 IPv6 用户的媒体流无法建立。若环境无 IPv6 协议栈导致绑定 `::` 失败，自动回退 `0.0.0.0` 重试一次。
+- `--keys` 冒号后必须带空格，缺空格时 livekit-server 直接退出。启动后轮询 3336 等待就绪，超时 15s 判定失败。
+- 子进程注册 `exit`、`SIGINT`、`SIGTERM` 钩子，主进程退出时一并终止。
 
-`--keys` 的格式要求冒号后必须带一个空格，缺空格时 livekit-server 会直接退出。启动后轮询 3336 端口等待就绪，超时 15s 判定失败。
-
-程序为子进程注册 `exit`、`SIGINT`、`SIGTERM` 三个钩子，主进程退出时一并终止。
-
-启动时还有一道**外网可达性自检**：本机网卡全为私网地址（RFC1918 / 回环 / CGNAT 等）且未配置 `LIVEKIT_NODE_IP` 与 TURN 时，启动日志输出显式警告。场景是「局域网语音正常、外网连不上」——页面与信令经 EdgeOne/CDN/反向代理正常工作，但 WebRTC 媒体（UDP/TCP）不经过七层代理，属于静默失败。日志给出三条解决路径：部署到有公网 IP 的主机并放行 3333/udp；用 frp 等穿透映射 3333/udp 并设 `LIVEKIT_NODE_IP`；或配置 TURN/TLS 三项并映射 5349/tcp。例外：云服务器 EIP 场景网卡是私网但 STUN 可探测到公网 IP，警告可忽略。
-
-各项配置的缺省值如下表，显式配置优先于缺省值。
+启动时还有**外网可达性自检**：本机网卡全为私网地址（RFC1918 / 回环 / CGNAT）且未配置 `LIVEKIT_NODE_IP` 与 TURN 时，日志显式告警。典型场景是「局域网语音正常、外网连不上」——页面与信令经 CDN / 反代正常，但 WebRTC 媒体不经七层代理，属静默失败。日志给出三条路径：部署到有公网 IP 的主机并放行 3333/udp；用 frp 映射 3333/udp 并设 `LIVEKIT_NODE_IP`；或配置 TURN/TLS 三项并映射 5349/tcp。云服务器 EIP 场景网卡是私网但 STUN 可探测公网 IP，警告可忽略。
 
 | 变量 | 缺省值 | 作用 |
 |---|---|---|
 | `LIVEKIT_API_KEY` | `devkey` | 令牌签名密钥 |
 | `LIVEKIT_API_SECRET` | `zviewer-dev-secret` | 令牌签名密钥 |
-| `LIVEKIT_API_HOST` | `http://127.0.0.1:3336` | 服务端 API 与信令反代的上游地址 |
+| `LIVEKIT_API_HOST` | `http://127.0.0.1:3336` | 服务端 API 与信令反代的上游 |
 | `LIVEKIT_BIND` | `::` | 内嵌服务监听地址 |
-| `LIVEKIT_RTC_TCP_PORT` | `3337` | ICE/TCP 端口（语音传输模式为 TCP 时开启） |
-| `LIVEKIT_EXTERNAL` | 未设置 | 设为 `1` 时跳过内嵌服务，改用外置 LiveKit |
+| `LIVEKIT_RTC_TCP_PORT` | `3337` | ICE/TCP 端口（TCP 模式开启） |
+| `LIVEKIT_EXTERNAL` | 未设置 | 设为 `1` 跳过内嵌服务，改用外置 LiveKit |
 
-生产包（pkg 单文件）不会联网下载二进制。找不到伴生二进制时只打印告警并给出重建指引，语音功能随之不可用。
+生产包（pkg 单文件）不联网下载二进制，找不到伴生文件时只打印告警并给出重建指引，语音随之不可用。
 
 ## 语音传输模式（UDP / TCP）
 
-管理端「基础设置 → 语音传输模式」控制语音媒体的通道构成，保存后后端自动热重启 livekit-server 子进程，进行中的语音会短暂中断并自动重连。
+管理端「基础设置 → 语音传输模式」控制媒体通道构成，保存后自动热重启 livekit-server，进行中的语音短暂中断并自动重连。
 
-| 模式 | livekit-server 启动参数 | 部署侧要求 |
+| 模式 | 启动参数 | 部署侧要求 |
 |---|---|---|
 | UDP（默认） | `--udp-port 3333` | 放行 3333/udp |
-| TCP | `--udp-port 3333`，另注入环境变量 `LIVEKIT_RTC_TCP_PORT` | 额外放行 3337/tcp（Docker 需补端口映射） |
+| TCP | `--udp-port 3333`，另注入 `LIVEKIT_RTC_TCP_PORT` | 额外放行 3337/tcp（Docker 需补端口映射） |
 
-TCP 模式开启 LiveKit 原生 ICE/TCP 直连：服务器同时广播 UDP 与 TCP 两路候选，由浏览器 ICE 自动选路——UDP 可用时走低延迟直连，被运营商或企业防火墙拦截时自动经 3337/tcp 连接媒体。UDP 通道始终开启（LiveKit 不支持禁用 UDP 候选），因此 TCP 模式是「加开选项」而非「替换」。端口号默认 3337，注意 livekit-server 没有对应的命令行参数（v1.13.7 传 `--tcp-port` 会报 `flag provided but not defined` 直接退出），只能经 `LIVEKIT_RTC_TCP_PORT` 环境变量下发：TCP 模式启动时注入，切回 UDP 时删除，避免热重启残留。
+TCP 模式开启 LiveKit 原生 ICE/TCP 直连：服务器同时广播 UDP 与 TCP 候选，浏览器 ICE 自动选路。UDP 通道始终开启（LiveKit 不支持禁用 UDP 候选），因此 TCP 是「加开选项」而非替换。端口号默认 3337，注意 livekit-server 没有对应命令行参数（v1.13.7 传 `--tcp-port` 会报 `flag provided but not defined` 退出），只能经 `LIVEKIT_RTC_TCP_PORT` 下发：TCP 模式启动时注入，切回 UDP 时删除。
 
-TCP 直连与 TURN/TLS 中继解决的是同一类问题（UDP 被拦截），机制不同：
+TCP 直连与 TURN/TLS 中继解决同一类问题（UDP 被拦截），机制不同：
 
 | | ICE/TCP 3337 | TURN/TLS 5349 |
 |---|---|---|
 | 连接形态 | 浏览器与服务器**直连** | 经 TURN 服务器**中继** |
 | 部署要求 | 无需域名与证书 | 需域名与正式证书（自签不被 WebRTC 信任） |
-| 启用方式 | 管理端设置即时切换 | 配置 `LIVEKIT_TURN_DOMAIN` / `CERT` / `KEY` 三项 |
+| 启用方式 | 管理端即时切换 | 配置 `LIVEKIT_TURN_DOMAIN` / `CERT` / `KEY` |
 | 穿透能力 | 受限于网络是否放行 3337/tcp | 更强（TLS 流量伪装为普通 HTTPS） |
 
-二者可以同时部署，客户端按连通性自动选择。
-
-语音面板会实时显示当前媒体走的传输协议徽标（UDP 或 TCP）：前端周期轮询 `RTCPeerConnection.getStats()`，解析 ICE 实际选中的候选线路，跟随真实路径而非设置值。
+二者可同时部署，客户端按连通性自动选择。语音面板实时显示当前协议徽标：前端周期轮询 `RTCPeerConnection.getStats()` 解析 ICE 实际选中的候选线路，跟随真实路径而非设置值。
 
 ## 故障排查
 
-下表按现象列出常见原因与处理方式。
-
 | 现象 | 原因 | 处理 |
 |---|---|---|
-| 前端提示语音未就绪 | 内嵌服务仍在下载或启动，或 `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` 未注入 | 查看服务端日志的 `[voice]` 段；单文件版确认包内含 `livekit-server` |
-| 接入后听不到别人声音 | 3333/udp 未放行，媒体无法直连 | 放行 UDP 3333；运营商或企业防火墙拦 UDP 时，改用 TCP 传输模式（3337/tcp）或配置 TURN/TLS 三项 |
-| 页面在 HTTPS 下报混合内容 | `/rtc` 信令未反代 | 确认反代把 `/rtc` 转发到主端口 3333 |
-| 连接后立刻被断开 | 令牌序列化错误 | 检查是否 `await` 了 `token.toJwt()` |
-| 只有 IPv6 用户连不上 | 监听地址绑到了 `0.0.0.0` | 确认 `LIVEKIT_BIND` 保持 `::` |
-| 局域网语音正常，外网用户连不上 | 服务器网卡全为私网地址且未配置 `LIVEKIT_NODE_IP` 与 TURN，WebRTC 媒体不经七层代理 | 启动日志有显式警告；按日志给出的三条路径处理（公网 IP / frp 映射 3333/udp / TURN 中继） |
-| 管理员禁言无效 | 目标已不在语音房间 | 禁言接口在参与者列表中找不到目标时返回 404 |
+| 提示语音未就绪 | 内嵌服务仍在下载 / 启动，或 API Key / Secret 未注入 | 查看日志 `[voice]` 段；单文件版确认包内有 `livekit-server` |
+| 听不到别人声音 | 3333/udp 未放行 | 放行 UDP 3333；或切 TCP 模式（3337/tcp）、配置 TURN/TLS |
+| HTTPS 下报混合内容 | `/rtc` 未反代 | 确认反代把 `/rtc` 转发到 3333 |
+| 连接后立刻断开 | 令牌序列化错误 | 检查是否 `await` 了 `token.toJwt()` |
+| 只有 IPv6 用户连不上 | 监听绑到了 `0.0.0.0` | 确认 `LIVEKIT_BIND` 为 `::` |
+| 局域网正常、外网连不上 | 网卡全私网且未配 `LIVEKIT_NODE_IP` 与 TURN | 按启动日志三条路径处理 |
+| 管理员禁言无效 | 目标已不在语音房间 | 接口在参与者列表中找不到目标时返回 404 |
 
 ## 常量速查
-
-下表汇总本页涉及的固定取值。
 
 | 常量 | 值 |
 |---|---|
