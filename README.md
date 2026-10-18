@@ -1,71 +1,31 @@
 # ZViewer 文档
 
-ZViewer —— 多人同步观影、追番与远程共享平台。
+ZViewer —— 多人同步观影、追番与远程共享平台。房主控制播放进度，观众实时跟随，异地也能像坐在一起看片。
 
-让一群人在不同地点也能像坐在一起一样看番、看电影。房主控制播放进度，观众实时跟随。
+## 特点
 
-## 最新功能变更
-
-| 变更 | 说明 |
-|------|------|
-| 📱 手机端客户端 | 独立仓库 ZViewerAPP：Android 与 HarmonyOS 正式版 1.5.0，内置 B 站扫码登录与本机播放代理，接入系统播放控件、后台播放与系统歌词，支持一起看全屏双击跳转手势；本地安装说明见[手机端 App](/basic/mobile) |
-| 🎵 一起听音乐模块 | 全新房间化音乐模块：网易云 + B站 双音源同步听歌，复刻 Hydrogen 歌词播放页（真实频谱可视化、音质角标、翻译/罗马音、评论区、弹幕），观众可申请切歌 / 调进度，CLI 本地代理支持高画质 |
-| 🎶 双源播放列表 | 网易云歌单 / 每日推荐 / FM 与 B站音乐分区 / 搜索 / 收藏双源独立队列，房间内实时同步；清空列表立即停声，播放全房间统一 |
-| ⏭️ B站推荐续播 | 顺序播放到队列末尾点「下一首」时自动拉取 3 首相关推荐入队续播，可随时关闭 |
-| 🙋 观众控制申请 | 观众可申请暂停 / 继续 / 切歌 / 调节进度 / 添加歌曲，房主开启「自动通过」后全部免审批直接生效 |
-| 🖥️ CLI 音乐体验 | 歌词页背景视频分辨率选择（按 B站 大会员状态过滤档位，普通账号最高 1080P）；背景视频进度同步与卡顿修复；刷新页面自动重连 |
-| 🎛️ UI 透明度分层 | 歌词页采用「冰霜层 + UI 图层」分层方案，毛玻璃模糊与整体透明度同时成立；新增封面 / 视频背景模糊滑块 |
-| ❤️ 收藏体验升级 | B站红心一键收藏 / 取消收藏，收藏状态跨会话回显（官方接口聚合查询）；「在网易云搜索」一键收藏到「我喜欢的音乐」并回显红心 |
-| 📱 移动端优化 | 一起听模块全面响应式改造（触屏控件常显、弹窗底部化）；手机语音 Opus 长帧 + 带内 FEC，弱网更流畅 |
-| 🛠️ 稳定性修复 | 未登录 B站 解析恢复（适配匿名接口变更）、进房歌单即时同步、刷新重进不再被弹回主页、B站 AI 字幕多重校验防错配 |
-| 🎬 播放引擎 playsvideo | 浏览器端自动将 MKV / AVI / TS / WMV 重封装为 fMP4 播放，DTS / AC3 / EAC3 音轨实时转码为 AAC，无需服务端 FFmpeg；新增系统级与影片级两级开关 |
-| 🎙️ 语音聊天体验升级 | 服务器中转 + 自适应 jitter buffer 降低网络抖动，采样率锁定与解码兜底，成员绑定真实身份并根治幽灵残留 |
-| 🛡️ 房管角色与语音管理 | 房主可任命房管（上限 10 名），房管可协助管理影片、禁言/踢出观众、语音禁言与移出语音 |
-| 📁 文件浏览双栏化 | 服务器文件 / 挂载 / Emby 浏览升级为双栏（面包屑导航 + 多选批量解析入房），小屏自动退化为单栏 |
-| 🔗 B 站短链解析 | 支持 b23.tv 短链接自动展开，解析分 P 参数 |
-| 📊 房间流量统计 | 房间页左下角实时显示当前房间上下行流量 |
-| 🏠 离开房间保持运行 | 房主主动离开后房间保持运行进入宽限期，右上角可一键回到房间 |
-| 🌐 播放链路全面优化 | HTTPS 能力探测、混合内容决策、SSRF 拦截、B 站域名白名单、代理 URL 相对路径化、后端缓存有界化 |
-| 📝 字幕系统重写 | 不再转换为 WebVTT，原生解析各格式并直接用 HTML/CSS 渲染，支持自动识别与手动添加 |
-| 📦 弹幕轨道持久化 | 弹幕轨道逻辑重写，支持屏蔽词、已删除弹幕持久化，跨房间同步 |
-| 🖥️ OBS 推流控制栏 | OBS 推流添加控制栏，屏幕共享添加自动显隐 |
-| 🔒 Let's Encrypt IP 证书 | 一键签发 SSL 证书支持 IP 地址 |
-| 🚀 一键 HTTPS 启动 | 启动脚本支持 HTTPS 模式，自动签发证书 |
-| ⬇️ 自动更新系统 | 版本更新添加下载进度条与阶段提示，支持 CDN 加速 |
+- **一起看** —— 房主控制播放 / 暂停 / 跳转 / 倍速，观众实时跟随；房主断线由服务器继续广播，房主离开后房间保留宽限期
+- **一起听** —— 网易云 + B 站双音源同步，歌词页含频谱可视化、翻译 / 罗马音、评论与弹幕，可叠加 PV 视频背景
+- **多源接入** —— B 站（含 b23.tv 短链）、MP4 直链、WebDAV、FTP、OpenList、Emby / Jellyfin、服务器文件
+- **格式兼容** —— 浏览器端将 MKV / AVI / TS / WMV 重封装为 fMP4，DTS / AC3 / EAC3 实时转 AAC，无需服务端 FFmpeg
+- **弹幕与字幕** —— B 站 / DandanPlay 弹幕多轨叠加，字幕原生解析渲染，支持自动识别与手动添加
+- **互动** —— 评论面板、观众申请控制（可自动通过）、语音聊天与语音禁言、OBS 推流与 WebRTC 屏幕共享
+- **角色权限** —— 房主 / 房管 / 观众三级，房管上限 10 名，可管理影片、禁言与移除成员
+- **主题** —— Material You 壁纸取色、明暗切换、玻璃拟态与透明度分层
+- **部署运维** —— 单文件 exe、源码、Docker、自动构建；一键 HTTPS、房间流量统计、带进度提示的自动更新
+- **客户端** —— 手机端 App（Android / HarmonyOS）与 ZViewerCLI 本地代理
 
 ## 技术栈
 
-- **前端**：React + TypeScript + Vite
-- **后端**：Node.js + Express + Socket.IO
-- **数据库**：SQLite（内置，无需额外安装）
-- **流媒体**：Node Media Server（RTMP/HTTP-FLV）
-- **其他**：WebRTC（屏幕共享）、WebSocket（实时通信）
+前端 React + TypeScript + Vite；后端 Node.js + Express + Socket.IO；数据库 SQLite（内置，免安装）；流媒体 Node Media Server（RTMP / HTTP-FLV）；WebRTC 屏幕共享。
 
-## 文档站点
+## 文档
 
-本文档站基于 VitePress 构建，分为两个分区：
+本文档站基于 VitePress 构建，另提供[英文版](/en/)。
 
-**基础教程**（[/basic/](/basic/)）— 安装部署与功能使用，语言精简：
+**基础教程** — [快速上手](/basic/) · [安装部署](/basic/install) · [功能说明](/basic/features) · [手机端](/basic/mobile) · [ZViewerCLI](/basic/cli) · [管理后台](/basic/admin) · [内网穿透](/basic/network) · [常见问题](/basic/faq)
 
-- [快速上手](/basic/) — 下载、启动、登录、建房、加影片
-- [安装与部署](/basic/install) — 单文件 / 源码 / Docker
-- [功能说明](/basic/features) — 全部功能一览与使用
-- [手机端 App](/basic/mobile) — Android / HarmonyOS 客户端下载、安装与平台差异
-- [ZViewerCLI](/basic/cli) — 本地代理客户端
-- [管理后台](/basic/admin)、[内网穿透](/basic/network)、[常见问题](/basic/faq)
-
-**拓展教程**（[/advanced/](/advanced/)）— 程序运行逻辑与接口设计，面向想深入了解或二次开发的用户：
-
-- [架构总览](/advanced/) — 进程模型、端口、技术栈
-- [房间同步逻辑](/advanced/sync) — 状态广播、控制权申请、离线关房
-- [视频源与 API 获取逻辑](/advanced/video-pipeline) — B站解析链、直链实时解析、播放引擎
-- [一起听音乐管线](/advanced/music-pipeline) — NCM 内部服务、音质降级链、凭证回退
-- [ZViewerCLI 代理协议](/advanced/cli-protocol) — 全局注册、归属过滤、代理链路
-- [主题系统实现](/advanced/theme-system) — Monet 色板、颜色强度、文字对比度作用域
-- [HTTPS 证书](/advanced/https) — 签发方式选择、ACME 流程、后端启用
-- [鉴权与权限模型](/advanced/auth)、[REST API 参考](/advanced/api)、[环境变量](/advanced/env)、[构建与更新](/advanced/build-update)
-
-English documentation is available at [/en/](/en/) (based on the previous structure).
+**拓展教程** — [架构总览](/advanced/) · [房间同步](/advanced/sync) · [视频源](/advanced/video-pipeline) · [音乐管线](/advanced/music-pipeline) · [代理协议](/advanced/cli-protocol) · [主题系统](/advanced/theme-system) · [HTTPS 证书](/advanced/https) · [鉴权与权限](/advanced/auth) · [REST API](/advanced/api) · [环境变量](/advanced/env) · [构建与更新](/advanced/build-update)
 
 ## 许可
 
