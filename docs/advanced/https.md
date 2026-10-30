@@ -1,6 +1,6 @@
 # HTTPS 证书
 
-HTTPS 由后端在同进程提供（`HTTPS=true`），证书由配套工具 `zviewer-cert` 签发。
+HTTPS 由后端在同进程提供（`HTTPS=true`），证书由后端自带的签发子命令生成。
 
 ## 签发方式选择
 
@@ -25,7 +25,7 @@ start.bat cert example.com --force    # 强制重新签发
 start.bat https example.com     # 签发证书 + HTTPS 启动
 ```
 
-Linux 下把 `start.bat` 换成 `./start.sh`。
+Linux 下把 `start.bat` 换成 `./start.sh`。启动脚本实际调的是 `zviewer-backend --gen-cert <host>`。
 
 ## Let's Encrypt 前置条件
 
@@ -43,20 +43,13 @@ Linux 下把 `start.bat` 换成 `./start.sh`。
 | `key.pem` | 私钥 |
 | `acme-account.key` | ACME 账号密钥（自动生成并复用，避免每次重建账号） |
 
-## 证书工具的实现
+## 实现
 
-| 组成 | 位置 | 说明 |
-|---|---|---|
-| 签发入口 | `scripts/generate-cert.js` | 自签 / 可信 CA 双模式；用 `node-forge` 生成 X.509，不依赖 openssl |
-| ACME 客户端 | `scripts/acme-client.js` | ACME v2（RFC 8555）HTTP-01 客户端，纯 Node 内置模块 + node-forge |
-| 产物 | `zviewer-cert` / `zviewer-cert.exe` | 由 `build-all.js` 单独打包，随单文件发行包分发 |
-| 调用方 | `packaging/start-win.ps1`、`packaging/start-linux.sh` | `cert` / `https` 子命令转调该产物 |
-
-打包后 `__dirname` 指向虚拟文件系统，工具改用 `process.cwd()` 定位 `config/ssl`，即证书目录跟随可执行文件所在目录。
+签发是后端的一个子命令（`backend-go/internal/ssl`），自签与 ACME 都是纯 Go 实现，不依赖 `openssl` 或 Node 的证书包。
 
 ### 自签流程
 
-不联网、不依赖 openssl。`node-forge` 现场生成密钥对与 X.509 证书，SAN 按地址类型填充（`localhost` 写入 `localhost` / `127.0.0.1` / `::1`，内网 IP 写入 IP 条目），有效期 10 年。
+现场生成密钥对与 X.509 证书，SAN 按地址类型填充（`localhost` 写入 `localhost` / `127.0.0.1` / `::1`，内网 IP 写入 IP 条目），有效期 10 年。
 
 ### ACME 流程
 
@@ -67,7 +60,7 @@ directory → newNonce → newAccount → newOrder
 ```
 
 - 目录端点：正式 `https://acme-v02.api.letsencrypt.org/directory`，`--staging` 切到 `acme-staging-v02`（无速率限制）。
-- 请求超时 30s，订单轮询间隔 3s，UA 为 `zviewer-cert/1.0`。
+- 请求超时 30s，订单轮询间隔 3s。
 - 账号密钥持久化在 `acme-account.key`，后续复用同一账号。
 
 ### 命令行选项
@@ -82,16 +75,9 @@ directory → newNonce → newAccount → newOrder
 
 ### 后端启用
 
-```ts
-const useHttps = process.env.HTTPS === 'true';
-const certPath = process.env.SSL_CERT_PATH || path.join(sslDir, 'cert.pem');
-const keyPath  = process.env.SSL_KEY_PATH  || path.join(sslDir, 'key.pem');
-// 证书文件缺失 → 打印提示并 process.exit(1)
-```
+`HTTPS=true` 时后端以 TLS 监听 3333；证书缺失会自动签一张本机自签证书再启动，不会因为少了证书直接退出。证书路径可用 `SSL_CERT_PATH` / `SSL_KEY_PATH` 覆盖。HTTP 与 HTTPS 二选一，不存在双端口并存。
 
-`HTTPS=true` 时用 `https.createServer` 承载同一个 Express 应用；证书路径可用 `SSL_CERT_PATH` / `SSL_KEY_PATH` 覆盖。HTTP 与 HTTPS 二选一，不存在双端口并存。
-
-启用 HTTPS 后 `req.secure` 为真，认证 cookie 会带 `secure` 属性并经 httpOnly cookie 下发，而不是 HTTP 下的 Bearer 回退，见[鉴权与权限模型](/advanced/auth)。单文件版启动脚本的 `https` 子命令会自动带上该变量。
+启用 HTTPS 后请求视为安全上下文，认证 cookie 会带 `secure` 属性并经 httpOnly cookie 下发，而不是 HTTP 下的 Bearer 回退，见[鉴权与权限模型](/advanced/auth)。单文件版启动脚本的 `https` 子命令会自动带上该变量。
 
 ## HTTPS 模式与自签提示
 

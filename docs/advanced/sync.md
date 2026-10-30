@@ -31,7 +31,7 @@
 | `subtitle-update` / `subtitle-request` / `track-change` | 字幕/轨道 | 转发完整 tracks 与 cues 并缓存；类型分 `danmaku` / `subtitle` |
 | `send-danmaku` / `send-comment` / `annotation-stroke` | 弹幕/评论/批注 | 持久化后广播；发送前校验在房与禁言状态 |
 
-处理器统一注册在 `SocketRegistry`（20 个 handler，`backend/src/modules/*/handlers/`），ack 统一为 `{ success, message?, code?, data? }`。
+处理器按域注册在后端的 `internal/room/*_handlers.go`（`sc.On(...)`），ack 统一为 `{ success, message?, code?, data? }`。
 
 两个 watch-together 事件的落盘与广播顺序相反，且是有意如此：`watch-together-state` 携带完整快照属权威数据，先写库再广播；`watch-together-control` 只是暂停、跳转这类离散操作，先广播保证即时性，再写库。改这两处前先看 handler 注释。
 
@@ -94,7 +94,7 @@ seek 统一走 `executeSeek`（`seek-service.ts`）：目标落在缓冲区内�
 ## 不走 Socket.IO 的实时能力
 
 - **语音聊天**：由独立 LiveKit 承载，主后端只签发凭证并执行禁言、踢出，见[语音聊天链路](/advanced/voice)。
-- **OBS 推流**：由 Node Media Server 处理，播放端走 HTTP-FLV，不占 Socket.IO 通道。
+- **OBS 推流**：由内置媒体服务处理，播放端走 HTTP-FLV，不占 Socket.IO 通道。
 
 ## 观众端只读化与资源清理
 

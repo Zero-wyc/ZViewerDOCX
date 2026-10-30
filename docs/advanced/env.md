@@ -7,10 +7,10 @@
 | 变量 | 说明 | 默认值 |
 |---|---|---|
 | `PORT` | 后端服务端口 | `3333` |
-| `HOST` | 监听地址 | 空（IPv4/IPv6 双栈） |
-| `NODE_ENV` | 运行环境 | `production` |
-| `DATABASE_URL` | SQLite 文件路径或 PostgreSQL 连接串 | `<config>/dev.sqlite` |
-| `CONFIG_DIR` | 数据根目录 | `<project-root>/config` |
+| `HOST` | 监听地址 | 空（IPv4 / IPv6 双栈） |
+| `CONFIG_DIR` | 数据根目录 | `<项目根>/config` |
+| `DATABASE_URL` | SQLite 文件路径（相对 `CONFIG_DIR`） | `<config>/dev.sqlite` |
+| `SQLITE_WAL` | 设 `0` 退回 `journal_mode=delete` | 启用 WAL |
 | `CORS_ORIGIN` | CORS 允许来源，逗号分隔 | `*` |
 | `JWT_ACCESS_SECRET` | Access Token 密钥（生产宜显式设置） | 自动生成并写入 `config/jwt-secrets.json` |
 | `JWT_REFRESH_SECRET` | Refresh Token 密钥（生产宜显式设置） | 同上 |
@@ -18,9 +18,12 @@
 | `JWT_REFRESH_EXPIRES_IN` | Refresh Token 有效期 | `30d`（guest 恒为 1h / 7d） |
 | `RTMP_PORT` | RTMP 推流端口 | `3334` |
 | `HTTP_FLV_PORT` | HTTP-FLV 拉流端口（内部，经 `/live` 反代） | `3335` |
+| `NMS_BIND` | 内置媒体服务监听地址 | `0.0.0.0` |
+| `NMS_HTTP_FLV_URL` | 指向外部媒体服务，设置后不再内嵌 | 空 |
 | `STREAM_PUSH_ENABLED` | 设为 `0` 时完全不启动推流服务，不监听 3334/3335 | 开启 |
 | `SERVER_HOST` | 生成 OBS 推流地址时使用的主机名 | 空（取请求 Host 去端口） |
-| `ENABLE_LOGIN_LOCK` | 登录失败锁定（5 次锁 15 分钟） | 关闭 |
+| `EMBY_CLIENT_NAME` | Emby / Jellyfin 客户端标识 | `ZViewer` |
+| `ZVIEWER_UPDATE_SOURCE` | 运维兜底更新源 `github` / `gitcode` / `mirror`，优先于后台开关 | 空 |
 
 单文件版的配置写在 `config/` 下的环境文件；Docker 用 `-e` 或 compose `environment` 注入。
 
@@ -28,7 +31,7 @@
 
 ## 语音聊天（LiveKit）
 
-语音由内嵌 LiveKit 承载，默认无需配置：信令经 `/rtc` 反代，媒体走 `3333/udp`，公网 IP 经 STUN 自动发现。以下变量用于特殊网络环境。
+语音由伴生的 LiveKit 承载，默认无需配置：信令经 `/rtc` 反代，媒体走 `3333/udp`，公网 IP 经 STUN 自动发现。以下变量用于特殊网络环境。
 
 | 变量 | 说明 | 默认值 |
 |---|---|---|
@@ -36,11 +39,11 @@
 | `LIVEKIT_API_SECRET` | 接入凭证签名密钥 | `zviewer-dev-secret` |
 | `LIVEKIT_API_HOST` | 服务端 API 与 `/rtc` 反代的上游地址 | `http://127.0.0.1:3336` |
 | `LIVEKIT_URL` | 客户端连接地址；留空按请求头推导，跟随页面域名与协议 | 空（自动推导） |
-| `LIVEKIT_EXTERNAL` | 设为 `1` 跳过内嵌服务，连接外置 LiveKit | `0` |
-| `LIVEKIT_BIND` | 内嵌服务监听地址 | `::`（双栈） |
+| `LIVEKIT_EXTERNAL` | 设为 `1` 跳过伴生服务，连接外置 LiveKit | `0` |
+| `LIVEKIT_BIND` | 伴生服务监听地址 | `::`（双栈） |
 | `LIVEKIT_NODE_IP` | ICE 广播地址；留空时自动 STUN 发现（需可出网），NAT 复杂环境可手动指定公网 IP | 空（自动） |
-| `LIVEKIT_RTC_TCP_PORT` | TCP 传输模式的 ICE/TCP 端口（模式在管理端「基础设置 → 语音传输模式」切换） | `3337` |
-| `LIVEKIT_TURN_DOMAIN` | TURN/TLS 域名，与下面两项同时设置时启用 5349 兜底中继 | — |
+| `LIVEKIT_RTC_TCP_PORT` | ICE/TCP 端口，与 UDP 同时发布；设 `0` 关闭该通道 | `3337` |
+| `LIVEKIT_TURN_DOMAIN` | TURN/TLS 域名，与下面两项同时设置时启用 3338 兜底中继 | — |
 | `LIVEKIT_TURN_CERT` | TURN TLS 证书路径（必须正式证书） | — |
 | `LIVEKIT_TURN_KEY` | TURN TLS 私钥路径 | — |
 
@@ -52,24 +55,19 @@ UDP 直连与 TURN 中继并行尝试，TURN 只作兜底，不影响直连延�
 
 | 变量 | 说明 | 默认值 |
 |---|---|---|
-| `VITE_API_URL` | API / Socket.IO 基础地址 | 空（`window.location.origin`） |
-| `VITE_FLV_BASE_URL` | OBS 推流模式 HTTP-FLV 拉流地址 | `/live`（后端反代到 NMS） |
+| `VITE_API_URL` | API 基础地址 | 空（`window.location.origin`） |
+| `VITE_SOCKET_URL` | Socket.IO 地址 | 空（同上） |
+| `VITE_FLV_BASE_URL` | OBS 推流模式 HTTP-FLV 拉流地址 | `/live`（后端反代到媒体服务） |
 | `VITE_RTMP_PORT` | OBS 推流端口提示 | `3334` |
 
 开发模式下 Vite 会把 `/api`、`/socket.io`、`/live` 代理到后端，无需配置 `VITE_API_URL`。运行时可在顶栏「自定义后端地址」覆盖，值存于 localStorage：`zviewer-custom-api-url`、`zviewer-custom-socket-url`、`zviewer-custom-flv-base-url`、`zviewer-custom-rtmp-port`。
 
-## 数据库切换
+## 数据库
 
-```
-# SQLite（默认，文件路径）
-<config>/dev.sqlite
-
-# PostgreSQL（连接串）
-postgres://user:password@host:5432/zviewer
-```
-
-切换后首次启动自动建表。SQLite 数据需手动迁移（标准格式，可用常规工具导出导入）；驱动 sql.js 为 wasm 实现，无需原生编译。
+只有 SQLite 一种：`config/dev.sqlite`，WAL 模式，纯 Go 驱动、无原生依赖。表结构由 `schema.sql` 定义，启动时只校验不建表——新机器必须先跑 `npm run db:init`，缺表会直接退出。
 
 ## 运行时可调项（管理后台）
 
-这些设置存库、经管理后台修改：注册模式、建房模式、权限矩阵、功能开关（`dashDisabled` / `playsvideoEnabled` / `betaFeaturesEnabled`）、无人房间自动清理（`autoDeleteInactiveRooms` + `autoDeleteAfterHours`，默认 24 小时）、预发布更新接收。通过 `/api/admin/settings` 修改，前端启动时经 `/api/auth/public-settings` 拉取。
+这些设置存库、经管理后台修改：注册模式、建房权限、权限矩阵、一起听默认音量、LiveKit 外部地址、多页面登录（测试）、公告自动弹出、Beta 功能与规则源 / CMS 源、`dashDisabled`、B站默认解析参数、无人房间自动清理（`autoDeleteInactiveRooms` + `autoDeleteAfterHours`，默认 24 小时）。通过 `/api/admin/settings` 修改，前端启动时经 `/api/auth/public-settings` 拉取。
+
+更新源开关（镜像 / GitHub）不进数据库，网页端写 `config/update-source.json`，桌面端写用户配置目录的 `settings.json`。

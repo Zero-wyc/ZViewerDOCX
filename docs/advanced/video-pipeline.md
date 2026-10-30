@@ -69,7 +69,7 @@ ep / ss 链接走独立解析管线：
 
 ## 代理层 `/api/stream/proxy*`
 
-浏览器直连 B站媒体会被防盗链与 CORS 挡住，代理层由 `proxyHttpUpstream`（`services/proxy/http-proxy.ts`）统一实现：
+浏览器直连 B站媒体会被防盗链与 CORS 挡住，代理层由 `ProxyHTTPUpstream`（`internal/proxy/upstream.go`）统一实现：
 
 - **域名白名单**：媒体代理只放行 `bilibili.com / bilivideo.com / hdslb.com / biliimg.com / bstatic.com` 等后缀匹配，加 akamaized 精确项（共享 CDN 不能按后缀放行，否则会给第三方域名错误注入 B站 Referer）；图片代理只放行 4 个 B站图床域名。
 - **防盗链头**：B站 URL 注入 `Referer/Origin` 加 Chrome UA；非 B站 URL 不注入。
@@ -134,7 +134,7 @@ playsvideo 的唯一门控是影片级「浏览器转码引擎」开关（`plays
 
 ## OBS 推流与 B站下载
 
-- **Node Media Server**：RTMP 监听 3334（`chunk_size: 60000, gop_cache: true, ping: 30`），HTTP-FLV 监听 3335，由 `/live` 反代。`STREAM_PUSH_ENABLED=0` 时完全不启动，3334/3335 不监听。推流码在 `postPublish` 校验：路径为 `/live/<streamKey>`，且房间 active、投屏模式、stream-push 子模式。推流与断流广播 `stream-status {live|offline}`，DB 查询失败也不漏广播（活跃会话 Map 兜底）。
+- **内置媒体服务**（`internal/nms`，进程内 Go 实现）：RTMP 监听 3334，HTTP-FLV 监听 3335，由 `/live` 反代。`STREAM_PUSH_ENABLED=0` 时完全不启动，3334/3335 不监听。推流码在发布时校验：路径为 `/live/<streamKey>`，且房间 active、投屏模式、stream-push 子模式。推流与断流广播 `stream-status {live|offline}`，DB 查询失败也不漏广播（活跃会话兜底）。
 - **OBS 配置一键下载**：`GET /api/stream-push/obs-config/:roomId` 生成场景集合 JSON（rtmp_custom），无 streamKey 时自动生成。
 - **server-files B站下载**（仅 root）：走 `preferMp4 + skipCdnCheck`。DASH 分离流需服务器 FFmpeg 合并，而 FFmpeg 已移除；B站 MP4 接口硬限 720P，因此高画质下载需走 CLI 模式。进度以 NDJSON 输出（每 2% 或 512KB），失败自动清理不完整文件，VIP 档位做服务端强校验。
 

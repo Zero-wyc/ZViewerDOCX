@@ -16,7 +16,7 @@ proxy_set_header Connection "upgrade";
 
 ## 语音聊天连不上
 
-语音媒体默认走 `3333/udp`，服务器防火墙需放行。UDP 被拦截时可配置内置 TURN/TLS 中继（TCP 5349）兜底，见[环境变量](/advanced/env)中的 `LIVEKIT_TURN_*` 三项。
+语音媒体默认走 `3333/udp`，服务器防火墙需放行；同时放行 `3337/tcp` 可让 UDP 被拦的客户端改走直连。仍不通时可配置 TURN/TLS 中继（`3338/tcp`）兜底，见[环境变量](/advanced/env)中的 `LIVEKIT_TURN_*` 三项。
 
 ## WebRTC 无法建立连接
 
@@ -24,9 +24,9 @@ proxy_set_header Connection "upgrade";
 
 ## 数据库
 
-后端用 TypeORM + sql.js（wasm 版 SQLite）持久化，纯 JS 实现、无原生模块，单文件版可在任意平台直接运行。数据库为标准 SQLite 格式（`config/dev.sqlite`），可用常规工具查看。
+后端用 Go 的纯 Go SQLite 驱动持久化，标准 SQLite 格式（`config/dev.sqlite`），可用常规工具查看；WAL 模式下同目录还会有 `-wal` / `-shm` 旁文件，属正常现象，别手删。
 
-写入采用原子写回（先写临时文件再替换），启动时自动滚动备份，文件损坏可用备份自愈。也支持 PostgreSQL，见[环境变量](/advanced/env)。
+备份用 `npm run db:backup -- <目标路径>`（内部 `VACUUM INTO`），直接 `cp` 主文件会丢最近事务。只有 SQLite，不支持 PostgreSQL。
 
 ## Bilibili 解析失败
 
@@ -43,4 +43,4 @@ proxy_set_header Connection "upgrade";
 
 ## 更新机制
 
-支持从 GitHub Releases 自动检测并应用更新，也可手动上传压缩包。管理员可控制是否接收预发布版，见[构建与更新](/advanced/build-update)。
+默认从 GitCode 镜像（国内直连）检查并一键更新，也可在后台关掉镜像改走 GitHub Releases，或手动上传压缩包。管理员可控制是否接收预发布版，见[构建与更新](/advanced/build-update)。

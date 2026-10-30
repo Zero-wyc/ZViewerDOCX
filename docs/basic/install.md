@@ -2,11 +2,14 @@
 
 ## 单文件版
 
-从 [Releases](https://github.com/Zero-wyc/ZViewer/releases) 下载压缩包解压即用，无需 Node.js / npm。包内附带 LiveKit 伴生程序（语音服务），首次使用语音时自动拉起，无需手动配置。
+从 [Releases](https://github.com/Zero-wyc/ZViewer/releases) 下载压缩包解压即用，不装运行时不装依赖。包内附带 LiveKit 伴生程序（语音服务），首次使用语音时自动拉起。
+
+Windows 另有桌面版（`zviewer-windows-x64-GUI.zip`）：只有一个 `ZViewerDesktop.exe`，带托盘与端口配置，负责启动、停止与更新内置服务；装好后从窗口操作即可，不需要命令行。
 
 启动方式：
 
-- **Windows**：双击 `start.bat`，进入交互菜单
+- **Windows 桌面版**：双击 `ZViewerDesktop.exe`
+- **Windows 单文件版**：双击 `start.bat`，进入交互菜单
 - **Linux**：执行 `./start.sh`（不带参数），进入交互菜单
 
 在菜单中选 `1` 启动服务，完成后访问 `http://localhost:3333`。
@@ -39,18 +42,22 @@
 
 ## 源码版
 
-需要 Node.js 18+。
+需要 Node.js 22+ 与 Go 1.26+（后端用 Go 编译，前端用 Vite 打包）。
 
 ```bash
 git clone https://github.com/Zero-wyc/ZViewer.git
 cd ZViewer
 npm install
+cp .env.example .env   # 按需改端口与密钥
+npm run db:init        # 建表，并打印初始管理员 root / root
 
-npm run dev             # 开发模式：前端 5174 / 后端 3333
+npm run dev                  # 开发模式：前端 5174 / 后端 3333
 npm run build && npm start   # 生产构建并启动
 
-./start-prod.sh start   # 或脚本一键完成装依赖、构建、启动（Windows 用 .\start-prod.bat）
+./start-prod.sh start        # 或脚本一键完成装依赖、构建、启动（Windows 用 .\start-prod.bat）
 ```
+
+`config/` 不入库，新克隆的仓库没有数据库，必须先跑 `db:init`（对非空库会拒绝执行）。
 
 ## Docker
 
@@ -61,6 +68,8 @@ docker run -d \
   -p 3333:3333 \
   -p 3333:3333/udp \
   -p 3334:3334 \
+  -p 3337:3337 \
+  -p 3338:3338 \
   -v /opt/zviewer/config:/app/config \
   zerowyc0721/zviewer:latest
 ```
@@ -75,17 +84,18 @@ services:
       - "3333:3333"      # 页面、API、WebSocket、/live 拉流、/rtc 语音信令
       - "3333:3333/udp"  # 语音媒体传输
       - "3334:3334"      # RTMP 推流
-      - "3337:3337"      # 语音 TCP 模式：管理端切换「语音传输模式 = TCP」时取消注释
+      - "3337:3337"      # 语音 ICE/TCP 直连
+      - "3338:3338"      # 语音 TURN/TLS 中继（可选，需配齐证书三项）
     volumes:
       - ./zviewer-config:/app/config
     restart: unless-stopped
 ```
 
-- `volumes` 把容器内 `/app/config` 挂到宿主机（`docker run` 示例用 `/opt/zviewer/config`，需绝对路径）。数据库、证书、上传文件与推流切片都在这里，换镜像不丢数据。
-- `-p 3333:3333/udp` 承载语音 WebRTC 媒体，缺少时语音无法互通；旧版本升级的用户需补上这条映射。
-- 语音开箱即用：公网 IP 经 LiveKit 内置 STUN 自动发现，信令地址按页面域名推导。UDP 被运营商或企业防火墙拦截时，在管理端「基础设置 → 语音传输模式」切到 TCP，额外放行 `3337/tcp` 并取消 compose 中该映射的注释。
+- `volumes` 把容器内 `/app/config` 挂到宿主机（`docker run` 示例用 `/opt/zviewer/config`，需绝对路径）。数据库、证书、上传文件都在这里，换镜像不丢数据。
+- 镜像标签：`latest` / `X.Y` 只在发正式版时更新，`X.Y.Z` 固定版本，`dev` 跟随测试构建。
+- `-p 3333:3333/udp` 与 `3337:3337` 承载语音媒体，缺少时语音无法互通：浏览器在 UDP 直连、TCP 直连之间自动择优，不需要开开关。
 - 镜像以 HTTP 模式启动，不自动签发证书；HTTPS 宜前置 Nginx / Caddy 反代。
-- 容器内更新只替换程序文件并重启后端进程，不重启容器；跨大版本升级语音功能需更换镜像。
+- 容器内更新只替换程序文件并重启后端进程，不重启容器。
 
 ## 数据持久化
 
@@ -93,16 +103,20 @@ services:
 
 | 路径 | 内容 |
 |---|---|
-| `config/dev.sqlite` | 数据库（标准 SQLite） |
+| `config/dev.sqlite` | 数据库（标准 SQLite，WAL） |
 | `config/ssl/` | SSL 证书与 ACME 账号 |
 | `config/uploads/` | 用户上传文件 |
-| `config/media/` | NMS 推流切片 |
+| `config/media/` | 预留目录，推流不落盘 |
 
 ## 首次启动检查
 
 1. 访问 `http://localhost:3333`，页面底部显示 🟢 已连接。
 2. 用 `root` / `root` 登录并改密。
 3. 生产环境设置 `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET`（见[环境变量](/advanced/env)）。
+
+## 从 4.x 升级
+
+首次启动会自动清理旧版遗留文件（`zviewer-frontend.exe`、`zviewer-cert`、`node_modules/`、`backend/`、`config/media` 里的推流切片），日志打印 `[cleanup] 已清理 v4 遗留文件 …`。`config/` 下的数据库、证书、上传文件不受影响；4.3.6 以下用 Docker 部署的，建议按上面的 compose 重新部署一次。
 
 ## 反向代理配置
 

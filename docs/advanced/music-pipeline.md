@@ -4,26 +4,22 @@
 
 ## 服务拓扑
 
-音频请求由主后端代理到内嵌的网易云 API 服务，再转发上游：
+网易云接口在进程内实现，没有中间服务，也不存在「音乐服务未启动」这种状态：
 
 ```
 前端 <audio>
    │  /api/music/stream?songId=&level=&roomId=
    ▼
-主后端 /api/music/*     callNcmApi()（附加 timestamp 绕内部服务 apicache）
-   ▼
-内部 NCM 服务 127.0.0.1:36530~36535   （@neteasecloudmusicapienhanced/api）
+后端 /api/music/*   internal/ncm（拼参数、注入凭证、解析音质）
    ▼
 网易云上游
 ```
 
-内嵌 NCM 服务由主进程启动（`ncm-api.service.ts`）：绑定 `127.0.0.1`（必须显式传 host，包内 fallback 会读 `process.env.PORT/HOST` 与主服务冲突），基准端口 **36530** 被占用时 +1 重试，最多 5 次；启动探测总限 15s。启动失败不阻塞主服务，此时 `/api/music/*` 返回 503 `NCM_UNAVAILABLE`。
-
-`callNcmApi()` 每次请求附加 `timestamp=Date.now()`：内部服务挂了 2 分钟 apicache，而缓存 key 不含 Cookie，不同登录态的相同 URL 会命中同一份缓存，匿名结果可能被 VIP 用户取到。
+拿不到数据只可能是请求本身失败（风控 / 地区 / 版权），日志前缀 `[ncm]`。
 
 ## 路由与登录态（`/api/music/ncm/*`）
 
-- **通用转发**：只放行 GET / POST。自动注入当前用户持久化的网易云 Cookie（`NcmCredential` 表按 userId 隔离，游客不落库），并**剥离 query / body 中的 `cookie` / `noCookie` 参数**，防止客户端伪造登录态。
+- **通用转发**：只放行 GET / POST。自动注入当前用户持久化的网易云 Cookie（`ncm_credential` 表按 userId 隔离，游客不落库），并**剥离 query / body 中的 `cookie` / `noCookie` 参数**，防止客户端伪造登录态。
 - **扫码登录**（`/login/qr/key|create|check`）**不注入旧凭据**：网易云以请求携带的 cookie 判定登录态，带上过期 MUSIC_U 会让二维码轮询异常（800 循环）。check 成功（803）的 Set-Cookie 正常持久化，并解析 profile（昵称 / 头像 / vipType）。
 - **Cookie 登录**（`/api/music/ncm-cookie-login`）：个人中心可直接粘贴 Cookie 登录，提交时先校验 MUSIC_U 是否对应有效登录态，再持久化并同步昵称 / 头像缓存；过期或错误返回 400。`GET /api/music/ncm-cookie` 返回 `MUSIC_U=xxx; __csrf=yyy` 格式串，供「复制 Cookie」迁移登录态。
 - Cookie 持久化判定：Set-Cookie 含 `music_u`，或名称含 `csrf`；按 cookie 名去重合并，新值覆盖旧值。
@@ -47,7 +43,7 @@ lossless → exhigh → higher → standard
 - **SSRF 防护**：解析出的直链域名必须匹配 `*.music.126.net`，否则拒绝转发。
 - **direct=1 模式**：用 302 把 CDN 直链交给 `<audio>` 直连，减少服务器带宽。直链缓存 **15 分钟**（签名有效期 20~30 分钟），key 含实际生效凭证的归属，VIP 直链只会发给同一凭证链的请求。`http:` 直链统一改写为 `https:`。
 - 代理流模式透传 Range（上游 206 必须转发），1MB 高水位读块，断连时 abort 上游并销毁流。
-- 错误码：403 `VIP_REQUIRED` / 404 `NO_COPYRIGHT`（`/check/music` 判定）/ 502 `RESOLVE_FAILED` / 503 `NCM_UNAVAILABLE`。
+- 错误码：403 `VIP_REQUIRED` / 404 `NO_COPYRIGHT`（`/check/music` 判定）/ 502 `RESOLVE_FAILED`。
 
 ## 房间内同步
 
