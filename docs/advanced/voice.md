@@ -24,7 +24,15 @@
 | 3336 | TCP | livekit-server 的 HTTP 与信令端口，仅内部使用 |
 | 3338 | TCP | TURN/TLS 中继，UDP 被拦截时的兜底，需显式配置 |
 
-livekit-server 是独立的 Go 二进制，不能编进主程序，因此以伴生进程随主进程启停：发行包内附在可执行文件旁，容器镜像里内嵌；开发模式缺失时自动下载到 `backend-go/dev-bin/`。
+livekit-server 是独立的 Go 二进制（压缩后约 18 MB），不能编进主程序，因此以伴生进程随主进程启停。
+
+| 部署形态 | 二进制来源 |
+|---|---|
+| Windows 安装包 | **不随包**。第一次点「语音聊天」时下载到可执行文件旁，装好后立即拉起，不用重启 |
+| Linux 包 / Docker 镜像 | 随包内嵌（离线环境没有可靠的下载时机） |
+| 源码开发 | 缺失时自动下载到 `backend-go/dev-bin/` |
+
+Windows 端的下载源与桌面端可选组件一致：产物仓库 `ZviewerRelease` 的 `components` 分支，顺序为 GitCode 直链 → GitHub raw → 官方 Release。接口 `GET /api/voice/status` 报告可用性与进度，`POST /api/voice/install` 触发下载（需登录，服务端单飞去重）。组件未下载时 `/api/voice/token` 返回 503 并提示下载，前端在语音面板里把「加入语音」换成「下载语音聊天组件」。
 
 ## 接入凭证
 
@@ -146,7 +154,7 @@ TCP 直连与 TURN/TLS 中继解决同一类问题（UDP 被拦截），机制�
 
 | 现象 | 原因 | 处理 |
 |---|---|---|
-| 提示语音未就绪 | 伴生服务仍在下载 / 启动，或 API Key / Secret 未注入 | 查看日志 `[voice]` 段；单文件版确认包内有 `livekit-server` |
+| 提示语音未就绪 | 伴生服务仍在下载 / 启动，或 API Key / Secret 未注入 | 查看日志 `[voice]` 段；Windows 包点房间里「下载语音聊天组件」，Linux 版确认包内有 `livekit-server` |
 | 听不到别人声音 | 3333/udp 未放行 | 放行 UDP 3333；或放行 TCP 3337、配置 TURN/TLS |
 | HTTPS 下报混合内容 | `/rtc` 未反代 | 确认反代把 `/rtc` 转发到 3333 |
 | 连接后立刻断开 | 令牌序列化错误 | 检查是否 `await` 了 `token.toJwt()` |
