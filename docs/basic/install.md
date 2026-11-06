@@ -1,8 +1,12 @@
 # 安装与部署
 
+## Windows 桌面版
+
+下载 `zviewer-windows-x64-GUI.zip`，解压后运行 `ZViewerDesktop.exe`。启动台负责启停后端与 ZViewerCLI，并提供 IPv6 直连、FRP、EasyTier 组网、Cloudflare Tunnel 等外网接入方式；Cloudflared / frpc / EasyTier 首次使用时按需下载，不随包分发。
+
 ## 单文件版
 
-从 [Releases](https://github.com/Zero-wyc/ZViewer/releases) 下载压缩包解压即用，无需 Node.js / npm。包内附带 LiveKit 伴生程序（语音服务），首次使用语音时自动拉起，无需手动配置。
+从 [Releases](https://github.com/Zero-wyc/ZViewer/releases) 下载压缩包解压即用，无需 Node.js / npm。语音、屏幕共享与 OBS 推流都不需要额外的伴生程序。
 
 启动方式：
 
@@ -39,18 +43,21 @@
 
 ## 源码版
 
-需要 Node.js 18+。
+需要 Go 1.26+ 与 Node.js 22+。
 
 ```bash
 git clone https://github.com/Zero-wyc/ZViewer.git
 cd ZViewer
 npm install
+npm run db:init         # 初始化空库，创建 root / root
 
 npm run dev             # 开发模式：前端 5174 / 后端 3333
 npm run build && npm start   # 生产构建并启动
 
 ./start-prod.sh start   # 或脚本一键完成装依赖、构建、启动（Windows 用 .\start-prod.bat）
 ```
+
+从 4.x 升级上来的旧库先跑 `npm run db:upgrade`：它会用 `VACUUM INTO` 备份，再在单个事务里补表补列。
 
 ## Docker
 
@@ -61,6 +68,7 @@ docker run -d \
   -p 3333:3333 \
   -p 3333:3333/udp \
   -p 3334:3334 \
+  -p 3337:3337 \
   -v /opt/zviewer/config:/app/config \
   zerowyc0721/zviewer:latest
 ```
@@ -72,20 +80,19 @@ services:
   zviewer:
     image: zerowyc0721/zviewer:latest
     ports:
-      - "3333:3333"      # 页面、API、WebSocket、/live 拉流、/rtc 语音信令
-      - "3333:3333/udp"  # 语音媒体传输
+      - "3333:3333"      # 页面、API、WebSocket、/live 拉流、/signal 共享与语音信令
+      - "3333:3333/udp"  # 语音 / 共享媒体（UDP）
       - "3334:3334"      # RTMP 推流
-      - "3337:3337"      # 语音 TCP 模式：管理端切换「语音传输模式 = TCP」时取消注释
+      - "3337:3337"      # 语音 / 共享媒体（TCP，UDP 受限时自动切换）
     volumes:
       - ./zviewer-config:/app/config
     restart: unless-stopped
 ```
 
 - `volumes` 把容器内 `/app/config` 挂到宿主机（`docker run` 示例用 `/opt/zviewer/config`，需绝对路径）。数据库、证书、上传文件与推流切片都在这里，换镜像不丢数据。
-- `-p 3333:3333/udp` 承载语音 WebRTC 媒体，缺少时语音无法互通；旧版本升级的用户需补上这条映射。
-- 语音开箱即用：公网 IP 经 LiveKit 内置 STUN 自动发现，信令地址按页面域名推导。UDP 被运营商或企业防火墙拦截时，在管理端「基础设置 → 语音传输模式」切到 TCP，额外放行 `3337/tcp` 并取消 compose 中该映射的注释。
+- 语音与屏幕共享是成员之间直连，服务器只承载信令，媒体不经过服务器；`3333/udp` 与 `3337` 是自建媒体面的端口，仅旧语音链路会用到。
 - 镜像以 HTTP 模式启动，不自动签发证书；HTTPS 宜前置 Nginx / Caddy 反代。
-- 容器内更新只替换程序文件并重启后端进程，不重启容器；跨大版本升级语音功能需更换镜像。
+- 容器内更新只替换程序文件并重启后端进程，不重启容器；跨大版本升级需更换镜像。
 
 ## 数据持久化
 
@@ -93,10 +100,13 @@ services:
 
 | 路径 | 内容 |
 |---|---|
-| `config/dev.sqlite` | 数据库（标准 SQLite） |
+| `config/dev.sqlite` | 数据库（SQLite，默认 WAL，另有 `-wal` / `-shm` 旁文件） |
+| `config/piik-rooms.sqlite` | 共享与语音的房间映射（Piik 房间码） |
 | `config/ssl/` | SSL 证书与 ACME 账号 |
 | `config/uploads/` | 用户上传文件 |
-| `config/media/` | NMS 推流切片 |
+| `config/media/` | 推流切片 |
+
+WAL 模式下不能直接复制 `.sqlite` 主文件，备份用 `--backup-db`（`VACUUM INTO` 一致性快照）或 `npm run db:backup`。
 
 ## 首次启动检查
 
@@ -104,9 +114,11 @@ services:
 2. 用 `root` / `root` 登录并改密。
 3. 生产环境设置 `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET`（见[环境变量](/advanced/env)）。
 
+4.x 的旧库不会被自动改造：分发包建议重装，源码部署跑 `npm run db:upgrade`。
+
 ## 反向代理配置
 
-WebSocket 与语音信令（`/rtc`）都需要升级头，同一个 upstream 即可覆盖：
+WebSocket 与共享 / 语音信令（`/socket.io`、`/signal`）都需要升级头，同一个 upstream 即可覆盖：
 
 ```nginx
 proxy_http_version 1.1;

@@ -6,11 +6,12 @@ ZViewer 是多人同步观影、追番与远程共享平台。日常安装与使
 
 ### 1. 下载
 
-从 [Releases](https://github.com/Zero-wyc/ZViewer/releases) 下载对应系统的压缩包（Windows `zviewer-windows-x64.zip` / Linux `zviewer-linux-x64.tar.gz`），解压。
+从 [Releases](https://github.com/Zero-wyc/ZViewer/releases) 下载对应版本的压缩包（Windows 桌面版 `zviewer-windows-x64-GUI.zip` / Windows 单文件 `zviewer-windows-x64.zip` / Linux `zviewer-linux-x64.tar.gz`），解压。
 
 ### 2. 启动
 
-- **Windows**：双击 `start.bat`，进入交互菜单
+- **Windows 桌面版**：运行 `ZViewerDesktop.exe`，由启动台托管后端与网络接入
+- **Windows 单文件**：双击 `start.bat`，进入交互菜单
 - **Linux**：执行 `./start.sh`，进入交互菜单
 
 菜单中选 `1` 启动服务，访问 `http://localhost:3333`。各项含义见[安装与部署](/basic/install#交互菜单)。
@@ -31,9 +32,10 @@ ZViewer 是多人同步观影、追番与远程共享平台。日常安装与使
 
 | 端口 | 用途 | 对外 |
 |---|---|---|
-| 3333 | 统一入口：API、WebSocket、前端页面、`/live` FLV 代理 | 是 |
+| 3333 | 统一入口：API、WebSocket、前端页面、`/live` FLV 拉流、`/signal` 共享与语音信令 | 是 |
+| 3333/udp | 语音媒体（UDP，自建媒体面，仅旧链路） | 可选 |
+| 3337 | 语音媒体（TCP，同上） | 可选 |
 | 3334 | RTMP 推流（OBS） | 是 |
-| 3335 | HTTP-FLV 拉流（内部） | 否 |
 
 ## 浏览器要求
 
@@ -43,12 +45,12 @@ ZViewer 是多人同步观影、追番与远程共享平台。日常安装与使
 
 | 页面 | 内容 |
 |---|---|
-| [安装与部署](/basic/install) | 单文件 / 源码 / Docker / 数据持久化 |
+| [安装与部署](/basic/install) | 桌面版 / 单文件 / 源码 / Docker / 数据持久化 |
 | [功能说明](/basic/features) | 全部功能的使用说明 |
 | [手机端 App](/basic/mobile) | Android / HarmonyOS 客户端与平台差异 |
 | [ZViewer CLI](/basic/cli) | 本地代理客户端安装与使用 |
 | [管理后台](/basic/admin) | 用户审核、房间管理、系统设置 |
-| [网络连接与内网穿透](/basic/network) | FRP / ZeroTier / IPv6 |
+| [网络连接与内网穿透](/basic/network) | FRP / EasyTier / IPv6 |
 | [常见问题](/basic/faq) | 证书、WebSocket、数据库等 |
 
 需要 HTTPS 时用一键脚本签发并启动：`start.bat https` / `./start.sh https`，机制见 [HTTPS 证书](/advanced/https)。新手用内网穿透自带的自动 HTTPS，或用自签证书即可——自签只会弹一次警告，不影响使用。

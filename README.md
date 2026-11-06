@@ -9,15 +9,15 @@ ZViewer —— 多人同步观影、追番与远程共享平台。房主控制�
 - **多源接入** —— B 站（含 b23.tv 短链）、MP4 直链、WebDAV、FTP、OpenList、Emby / Jellyfin、服务器文件
 - **格式兼容** —— 浏览器端将 MKV / AVI / TS / WMV 重封装为 fMP4，DTS / AC3 / EAC3 实时转 AAC，无需服务端 FFmpeg
 - **弹幕与字幕** —— B 站 / DandanPlay 弹幕多轨叠加，字幕原生解析渲染，支持自动识别与手动添加
-- **互动** —— 评论面板、观众申请控制（可自动通过）、语音聊天与语音禁言、OBS 推流与 WebRTC 屏幕共享
+- **互动** —— 评论面板、观众申请控制（可自动通过）、房间语音（成员直连）与语音禁言、OBS 推流与 WebRTC 屏幕共享（观众互助转发）
 - **角色权限** —— 房主 / 房管 / 观众三级，房管上限 10 名，可管理影片、禁言与移除成员
-- **主题** —— Material You 壁纸取色、明暗切换、玻璃拟态与透明度分层
-- **部署运维** —— 单文件 exe、源码、Docker、自动构建；一键 HTTPS、房间流量统计、带进度提示的自动更新
-- **客户端** —— 手机端 App（Android / HarmonyOS）与 ZViewerCLI 本地代理
+- **主题** —— Material You 壁纸取色、明暗切换、玻璃拟态与透明度分层，界面中英双语
+- **部署运维** —— Windows 桌面版、单文件 exe、源码、Docker、自动构建；一键 HTTPS、房间流量统计、带进度提示与镜像源的自动更新
+- **客户端** —— 手机端 App（Android / HarmonyOS / iOS）与 ZViewerCLI 本地代理
 
 ## 技术栈
 
-前端 React + TypeScript + Vite；后端 Node.js + Express + Socket.IO；数据库 SQLite（内置，免安装）；流媒体 Node Media Server（RTMP / HTTP-FLV）；WebRTC 屏幕共享。
+前端 React + TypeScript + Vite；后端 Go + SQLite（默认 WAL）；流媒体由后端进程内提供（RTMP / HTTP-FLV）；语音与屏幕共享走 Piik 信令，成员之间直连。
 
 ## 文档
 

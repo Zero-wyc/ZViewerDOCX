@@ -25,17 +25,17 @@ features:
     details: Supports Bilibili (premium member resolution, short-link parsing), direct MP4 links, WebDAV, FTP, OpenList, Emby/Jellyfin, server files, and more video sources.
   - icon: 💬
     title: Real-time Interaction
-    details: Comment panel, viewer request for control, voice chat (server relay) and voice moderation.
+    details: Comment panel, viewer request for control, peer-to-peer voice chat (the host is the root) and voice moderation.
   - icon: 🗨️
     title: Danmaku System
     details: Supports Bilibili danmaku, DandanPlay danmaku, custom danmaku tracks, track overlaying, and danmaku doubling effects.
   - icon: 🖥️
     title: Screen Sharing and Streaming
-    details: WebRTC-based screen sharing, OBS RTMP streaming with Node Media Server for HTTP-FLV playback.
+    details: WebRTC-based screen sharing with viewer relay and automatic upstream switching; OBS RTMP streaming with HTTP-FLV playback from the built-in media service.
   - icon: 🎨
     title: Material You Theme
     details: Extracts colors from wallpaper to generate a complete palette, light/dark theme switching, custom background, glassmorphism UI.
   - icon: 🚀
     title: Minimal Deployment
-    details: One-command startup from source, single-file exe, Docker image, GitHub Actions auto-build, pure JS implementation with no native modules.
+    details: One-command startup from source, Windows desktop app, single-file exe, Docker image, GitHub Actions auto-build, no native modules.
 ---

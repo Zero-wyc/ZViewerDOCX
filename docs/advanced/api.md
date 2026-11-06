@@ -150,13 +150,23 @@
 
 ## 语音 `/api/voice`
 
-实时音频由独立 LiveKit 承载，详见[语音聊天链路](/advanced/voice)。
+语音与屏幕共享共用 Piik 的一条信令（`/signal`，WebSocket）与一棵客户端树，详见[语音聊天链路](/advanced/voice)。
 
 | 方法 | 路径 | 说明 | 权限 |
 |------|------|------|------|
-| POST | `/token` | 签发 LiveKit 接入凭证（返回连接地址与 JWT） | 登录 |
-| POST | `/mute` | 禁言 / 解禁对方麦克风（服务器静音 + metadata 标记） | root / 房主 / 房管 |
-| POST | `/kick` | 踢出语音成员 | root / 房主 / 房管 |
+| GET | `/status` | 语音是否可用、走哪条链路（免鉴权，游客也要能看到入口） | 开放 |
+| POST | `/piik/session` | 签发语音房间凭证（房主 `token` / 观众 `viewerGrant`），房主不在时 409 | 登录 |
+
+禁言、踢人不再走 REST：两者是 `room-voice-command` 实时消息，权限由服务端校验（root / 房主 / 房管）。
+
+## 屏幕共享 `/api/share`
+
+| 方法 | 路径 | 说明 | 权限 |
+|------|------|------|------|
+| POST | `/piik/session` | 签发共享房间凭证，房主调用时建出房间 | 登录 |
+| DELETE | `/piik/session` | 释放本房间的 Piik 房间映射 | 登录 |
+
+共享的信令帧走 `/signal`（升级后是 WebSocket，不是 REST），路径与鉴权由桥接层统一处理。
 
 ## CLI 代理 `/api/cli`
 
@@ -197,7 +207,11 @@
 | 方法 | 路径 | 说明 | 权限 |
 |------|------|------|------|
 | GET | `/rooms` | 全量房间列表 | admin / root |
+| GET | `/rooms/:roomId/moderators` | 房管列表 | admin / root |
+| POST | `/rooms/:roomId/moderators` | 任命房管 | admin / root |
+| DELETE | `/rooms/:roomId/moderators/:userId` | 撤销房管 | admin / root |
 | DELETE | `/rooms/:roomId` | 强制关闭房间（先广播再断连） | admin / root |
+| POST | `/rooms/:roomId/reopen` | 重新开放已关闭的房间 | admin / root |
 | POST | `/rooms/batch-delete` | 批量删除 | root |
 | POST | `/rooms/delete-all` | 清空所有房间 | root |
 | POST | `/rooms/cleanup-unused` | 清理无人房间 | admin / root |
@@ -213,9 +227,11 @@
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/check` | 检查更新（可关预发布接收） |
-| POST | `/apply` | 下载并应用更新（进度流式） |
-| POST | `/upload` | 上传压缩包更新 |
+| GET | `/check` | 检查更新（可关预发布接收，跟随所选更新源） |
+| POST | `/apply` | 下载并应用更新（进度流式；`/apply-stream` 为流式版本） |
+| POST | `/upload` | 上传压缩包更新（`/upload-stream` 为流式版本） |
+
+桌面启动台托管时（`ZVIEWER_DESKTOP=1`）这一组接口统一返回 409，更新在启动台里做。
 
 ## 其他接口
 
@@ -229,7 +245,6 @@
 
 | code | HTTP | 含义 |
 |---|---|---|
-| `NCM_UNAVAILABLE` | 503 | 内嵌网易云服务未启动 |
 | `VIP_REQUIRED` | 403 | 音质 / 清晰度需 VIP（含 B站下载会员档强校验） |
 | `NO_COPYRIGHT` | 404 | 无版权（`/check/music` 判定） |
 | `RESOLVE_FAILED` | 502 | 地址解析全链失败 |

@@ -4,67 +4,53 @@
 
 ```
 ZViewer/
-├── backend/              # Express backend (TypeScript + TypeORM + sql.js)
+├── backend-go/           # Go backend
+├── desktop/              # Wails v2 desktop shell (Go) + ui/
 ├── frontend/             # React frontend (Vite + Tailwind CSS)
-├── scripts/              # Build / certificate / startup utility scripts
+├── scripts/              # Build / hot reload / startup utility scripts
 ├── docker/               # Docker entry scripts
 ├── packaging/            # Startup script templates
-├── dist/                 # Build output (single-file executable program)
+├── dist/                 # Build output (backend binary + web assets)
 ├── config/               # Runtime configuration (auto-generated)
 ├── log/                  # Runtime logs
 ├── package.json          # Root package.json (workspaces configuration)
-├── build-all.js          # Full compilation script
+├── build-all.js          # Distribution build
 ├── start-prod.bat        # Startup script (Windows)
 └── start-prod.sh         # Startup script (Linux/macOS)
 ```
 
 ---
 
-## Backend (backend/)
+## Backend (backend-go/)
 
 ### Tech Stack
-- **Runtime**: Node.js + TypeScript
-- **Web Framework**: Express
-- **Database ORM**: TypeORM
-- **Database Driver**: sql.js (SQLite wasm implementation)
-- **Real-time Communication**: Socket.IO
+- **Runtime**: Go 1.26 (no cgo)
+- **HTTP**: standard library `net/http`
+- **Database**: SQLite via `modernc.org/sqlite`, WAL by default
+- **Real-time**: in-house Socket.IO protocol layer (`internal/sio`), Piik signaling on `/signal`
+- **Media**: `internal/nms` (RTMP / HTTP-FLV), `internal/share` + `internal/piik` (sharing and voice)
 - **Authentication**: JWT
 
 ### Directory Structure
 
 ```
-backend/src/
-├── index.ts               # Application entry point
-├── data-source.ts         # Database configuration
-├── routes/                # REST API routes
-│   ├── auth.ts            # Authentication
-│   ├── admin.ts           # Admin panel
-│   ├── rooms.ts           # Rooms
-│   ├── stream/            # Media streaming proxy
-│   ├── danmaku.ts         # Danmaku (弹幕)
-│   ├── serverFiles.ts     # Server files
-│   ├── updater.ts         # System updates
-│   ├── cli.ts             # CLI proxy
-│   ├── webdav.ts, ftp.ts, openlist.ts  # Mount point management
-│   └── ...
-├── modules/               # Modular architecture (core)
-│   ├── room/              # Room
-│   ├── viewer/            # Viewer management
-│   ├── movie/             # Movie management
-│   ├── sync-playback/     # Synchronized playback
-│   ├── playback-memory/   # Playback memory
-│   ├── comment/           # Comments and annotations
-│   ├── cli/               # CLI proxy
-│   ├── stream-push/       # OBS streaming
-│   ├── socket/            # Socket registry
-│   └── shared/            # Shared DTOs
-├── services/              # Business logic (Bilibili/updates/WebRTC)
-├── entities/              # Data entities
-│   ├── User.ts, Room.ts, Session.ts, Movie.ts
-│   ├── Comment.ts, PlaybackState.ts
-│   ├── SystemSettings.ts, UserMount.ts
-│   └── BilibiliCredential.ts
-└── middleware/             # Middleware (JWT authentication, etc.)
+backend-go/
+├── cmd/zviewer-server/     # assembly entry point (main.go has no business logic)
+├── internal/
+│   ├── api/                # HTTP layer; registration order is the contract
+│   ├── room/               # rooms, sync playback, comments, voice control
+│   ├── realtime/           # Socket.IO event hub
+│   ├── bilibili/           # Bilibili parsing, credentials, permissions
+│   ├── proxy/              # media / anti-leech proxy, Range handling
+│   ├── share/              # sharing sessions, SFU, Piik bridge
+│   ├── piik/               # vendored Piik server packages (protocol / signal / route)
+│   ├── voicertc/           # voice control plane (fallback SFU)
+│   ├── ncm/                # NetEase Cloud Music client
+│   ├── nms/                # built-in RTMP / HTTP-FLV service
+│   ├── anime/, anisubs/, kazumi/, cms/   # aggregated anime sources
+│   ├── db/                 # open, schema verify, indexes, backup, upgrade
+│   └── store/              # SQL for every domain
+└── scripts/                # smoke / regression scripts
 ```
 
 ---
@@ -77,7 +63,7 @@ backend/src/
 - **Styling**: Tailwind CSS
 - **State Management**: Zustand
 - **Routing**: React Router
-- **Player**: ArtPlayer
+- **Player**: videojs10-dash (video.js 10 + dash.js), playsvideo for re-encode
 - **Danmaku**: danmaku.js
 
 ### Directory Structure
@@ -129,14 +115,16 @@ frontend/src/
 
 ## Database
 
-| Table | Entity | Description |
-|-------|--------|-------------|
-| `users` | User | User accounts |
-| `rooms` | Room | Rooms |
-| `sessions` | Session | Session history |
-| `movies` | Movie | Movies |
-| `comments` | Comment | Comments |
-| `playback_states` | PlaybackState | Playback memory |
-| `system_settings` | SystemSettings | System settings |
-| `user_mounts` | UserMount | User mount points |
-| `bilibili_credentials` | BilibiliCredential | Bilibili credentials |
+| Table | Description |
+|-------|-------------|
+| `users` | User accounts |
+| `rooms` | Rooms |
+| `sessions` | Session history |
+| `movies` | Movies |
+| `comments` | Comments |
+| `playback_states` | Playback memory |
+| `system_settings` | System settings |
+| `user_mounts` | User mount points |
+| `bilibili_credentials` | Bilibili credentials |
+
+The schema has a single source of truth: `backend-go/internal/db/schema.sql`.

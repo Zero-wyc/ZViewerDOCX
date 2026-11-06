@@ -48,7 +48,9 @@ The Docker image starts in HTTP mode, with the backend serving frontend static f
 docker run -d \
   --name zviewer \
   -p 3333:3333 \
+  -p 3333:3333/udp \
   -p 3334:3334 \
+  -p 3337:3337 \
   -v zviewer-data:/app/config \
   zerowyc0721/zviewer:latest
 ```
@@ -62,8 +64,10 @@ services:
   zviewer:
     image: zerowyc0721/zviewer:latest
     ports:
-      - "3333:3333"   # Backend unified entry (API + WebSocket + frontend pages)
-      - "3334:3334"   # RTMP streaming (OBS)
+      - "3333:3333"      # API + WebSocket + pages + /signal + /live
+      - "3333:3333/udp"  # Voice and sharing media (UDP)
+      - "3334:3334"      # RTMP streaming (OBS)
+      - "3337:3337"      # Voice and sharing media (TCP, used when UDP is blocked)
     volumes:
       - zviewer-data:/app/config
     restart: unless-stopped

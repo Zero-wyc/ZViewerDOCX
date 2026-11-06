@@ -19,13 +19,13 @@ proxy_set_header Connection "upgrade";
 
 ## WebRTC Cannot Establish Connection
 
-WebRTC's `getUserMedia` requires HTTPS access. Configure SSL certificates in production. If both parties are behind strict NAT, a TURN server (e.g., coturn) may need to be deployed.
+WebRTC's `getUserMedia` requires HTTPS access. Configure SSL certificates in production. Voice and screen sharing are peer-to-peer, so no separate TURN server is needed; make sure the reverse proxy passes `/signal` too.
 
 ## Database Notes
 
-The backend uses TypeORM + sql.js (WASM-based SQLite) for persistence. It is pure JS with no native modules -- the single-file exe version can run directly on any platform without compilation. The database file is standard SQLite format (`config/dev.sqlite`) and can be inspected with any standard SQLite tool.
+The backend is Go with SQLite (`config/dev.sqlite`, WAL by default). The file is standard SQLite and can be inspected with any standard SQLite tool.
 
-Optional PostgreSQL is supported. See [Environment Variables](/en/dev/env) for configuration.
+The startup path only verifies the schema — it never creates tables or columns. Use `--init-db` for an empty database, `--upgrade-db` for a 4.x database, and `--backup-db` (`VACUUM INTO`) for backups; never copy the main file while WAL is on.
 
 ## Bilibili Parsing Failure
 

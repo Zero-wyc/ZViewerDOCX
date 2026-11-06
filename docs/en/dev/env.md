@@ -1,106 +1,90 @@
 # Environment Variables
 
-ZViewer is configured through environment variables. You can set them in a `.env` file (copy from `.env.example`) or via system environment variables.
+ZViewer is configured through environment variables at startup, plus settings stored in the database and edited in the admin panel.
 
 ---
 
-## Backend Environment Variables
+## Backend
 
 ### Basic Configuration
 
-| Variable | Description | Default | Example |
-|----------|-------------|---------|---------|
-| `PORT` | Backend service port | `3333` | `PORT=3333` |
-| `HOST` | Listen address | Empty (dual-stack) | `HOST=0.0.0.0` |
-| `NODE_ENV` | Runtime environment | `production` | `NODE_ENV=development` |
-
-### Storage Paths
-
-When all paths are left empty, the defaults under `<project-root>/config/` are used.
-
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `PORT` | Backend service port | `3333` |
+| `HOST` | Listen address | Empty (dual-stack) |
 | `CONFIG_DIR` | Data root directory | `<project-root>/config` |
-| `DATABASE_URL` | Database connection | `<config>/dev.sqlite` |
-| `UPLOADS_DIR` | Uploaded files directory | `<config>/uploads` |
-| `AVATARS_DIR` | Avatars directory | `<config>/avatars` |
-| `MEDIA_DIR` | NMS streaming temporary directory | `<config>/media` |
+| `DATABASE_URL` | SQLite file path | `<config>/dev.sqlite` |
+| `CORS_ORIGIN` | Allowed CORS origins, comma-separated | `*` |
+| `TRUSTED_PROXY_CIDRS` | Trusted reverse-proxy ranges (for forwarded headers) | Empty |
 
-> PostgreSQL example: `DATABASE_URL=postgresql://user:password@localhost:5432/zviewer` (requires synchronizing changes in `data-source.ts`)
-
-### CORS Configuration
+### JWT Authentication
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `CORS_ORIGIN` | Allowed CORS origins, comma-separated | `*` |
+| `JWT_ACCESS_SECRET` | Access token secret | Generated and stored in `config/jwt-secrets.json` |
+| `JWT_REFRESH_SECRET` | Refresh token secret | Same file |
+| `JWT_ACCESS_EXPIRES_IN` | Access token validity | `24h` |
+| `JWT_REFRESH_EXPIRES_IN` | Refresh token validity | `30d` (guests: `1h` / `7d`) |
 
-For production, it is recommended to set this to the specific frontend domain, e.g., `CORS_ORIGIN=https://example.com`.
+Set both secrets explicitly in production so restarting does not invalidate sessions.
 
-### JWT Authentication (must change in production)
+### Voice and Sharing Media
 
-| Variable | Description | Default | Recommendation |
-|----------|-------------|---------|----------------|
-| `JWT_ACCESS_SECRET` | Access Token secret | Auto-generated | 32+ character random string |
-| `JWT_REFRESH_SECRET` | Refresh Token secret | Auto-generated | 32+ character random string, different from the above |
-| `JWT_ACCESS_EXPIRES_IN` | Access Token validity | `15m` | `15m` or `30m` |
-| `JWT_REFRESH_EXPIRES_IN` | Refresh Token validity | `7d` | `7d` or `14d` |
+Voice and screen sharing are peer-to-peer; the server carries signaling only. These ports belong to the built-in media plane and are used by the legacy voice path.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SHARE_MEDIA_PORT` | Media UDP port | `3333` |
+| `SHARE_MEDIA_TCP_PORT` | Media TCP port. **Must not equal `PORT`** | `3337` |
+| `SHARE_MEDIA_PUBLIC_IP` | Public IP under NAT 1:1 (cloud / FRP) | Auto |
 
 ### Streaming Ports
 
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `RTMP_PORT` | RTMP streaming port | `3334` |
-| `HTTP_FLV_PORT` | HTTP-FLV pull stream port | `3335` |
+| `STREAM_PUSH_ENABLED` | `0` disables streaming entirely | Enabled |
+| `STREAM_PUSH_OFFLINE_GRACE_SECONDS` | Offline grace after the publisher stops | `60` |
+| `NMS_EMBEDDED` | `0` disables the built-in media service | Embedded |
+| `NMS_BIND` | Built-in RTMP listen address | `0.0.0.0` |
+| `NMS_HTTP_FLV_URL` | External FLV upstream; when set, `/live` proxies instead | Empty (in-process) |
+| `HTTP_FLV_PORT` | Probe port for external mode only | `3335` |
+| `SERVER_HOST` | Hostname used in the generated RTMP address | Request `Host` |
 
-### Additional Variables
+### Certificates and Updates
 
-| Variable | Description | Example |
+| Variable | Description | Default |
 |----------|-------------|---------|
-| `HTTPS` | Enable HTTPS mode | `HTTPS=true` |
-| `SSL_CERT_PATH` | Certificate path | `config/ssl/cert.pem` |
-| `SSL_KEY_PATH` | Private key path | `config/ssl/key.pem` |
-| `SERVER_HOST` | Hostname preferred for RTMP address | `SERVER_HOST=example.com` |
+| `HTTPS` | Start with HTTPS | Off |
+| `SSL_CERT_PATH` / `SSL_KEY_PATH` | Certificate and key path | `config/ssl/cert.pem` / `key.pem` |
+| `ZVIEWER_CERT_CHALLENGE_PORT` | ACME HTTP-01 challenge port | `80` |
+| `ZVIEWER_UPDATE_SOURCE` | Update source: `github` / `gitcode` | Mirror |
+| `ZVIEWER_UPDATE_API_BASE` | Custom manifest URL | Empty |
+| `ZVIEWER_DESKTOP` | Set by the desktop shell; web update endpoints return 409 | Empty |
 
 ---
 
 ## Frontend Build Environment Variables
 
-Used when building the frontend, not at runtime.
+Build-time only; they end up in the bundle.
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `VITE_API_URL` | API/Socket.IO base URL | Empty (uses `window.location.origin`) |
-| `VITE_FLV_BASE_URL` | HTTP-FLV pull stream base URL | Empty (uses same-origin address) |
+| `VITE_API_URL` | API base URL | Empty (`window.location.origin`) |
+| `VITE_SOCKET_URL` | Socket.IO base URL | Empty (same) |
+| `VITE_FLV_BASE_URL` | FLV playback base URL | `/live` |
+| `VITE_RTMP_PORT` | RTMP port hint | `3334` |
+
+During development Vite proxies `/api`, `/socket.io`, `/signal` and `/live` to the backend, so no configuration is needed.
 
 ---
 
-## Configuration Examples
+## Runtime Settings (Admin Panel)
 
-### Minimal Configuration (Development)
-
-```ini
-PORT=3333
-NODE_ENV=development
-```
-
-### Recommended Production Configuration
-
-```ini
-PORT=3333
-NODE_ENV=production
-CORS_ORIGIN=https://your-frontend-domain.com
-JWT_ACCESS_SECRET=<32+ character random string>
-JWT_REFRESH_SECRET=<another 32+ character random string>
-JWT_ACCESS_EXPIRES_IN=15m
-JWT_REFRESH_EXPIRES_IN=7d
-```
+Stored in the database and edited in the admin panel: registration mode, room creation mode, permission matrix, feature switches (`dashDisabled` / `playsvideoEnabled` / `betaFeaturesEnabled`), inactive-room cleanup, update source, room floating entries and default parse modes. Changed through `/api/admin/settings`; the frontend reads public ones from `/api/auth/public-settings`.
 
 ### Generating Random Keys
 
 ```bash
-# Linux / macOS
 openssl rand -base64 32
-
-# or Node.js
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```

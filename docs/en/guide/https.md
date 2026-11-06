@@ -2,7 +2,7 @@
 
 ## Issuance Types
 
-The certificate tool (`zviewer-cert`, source code at `scripts/generate-cert.js`) automatically selects the issuance method based on the address type:
+Certificate issuance is a built-in subcommand of the backend (`--gen-cert`) and selects the method based on the address type:
 
 | Address Type | Certificate | Description |
 |---|---|---|
@@ -10,7 +10,7 @@ The certificate tool (`zviewer-cert`, source code at `scripts/generate-cert.js`)
 | Domain (e.g., `example.com`) | **Let's Encrypt trusted CA certificate** | Automatically applied via the built-in ACME client; no browser warnings |
 | Public IP (e.g., `1.2.3.4`) | **Let's Encrypt trusted CA certificate** | Supports issuing Let's Encrypt trusted certificates for public IPs |
 
-> Certificate issuance is pure Node.js (no openssl required), based on the built-in ACME v2 (RFC 8555) HTTP-01 client, with `node-forge` as the only dependency.
+> Issuance runs inside the backend (Go standard library, no openssl): self-signed keys and X.509 are generated locally, Let's Encrypt uses the built-in ACME v2 (RFC 8555) HTTP-01 client, and the account key in `acme-account.key` is reused.
 
 ## Command-line Issuance
 

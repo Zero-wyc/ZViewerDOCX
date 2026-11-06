@@ -4,22 +4,18 @@
 
 ## 服务拓扑
 
-音频请求由主后端代理到内嵌的网易云 API 服务，再转发上游：
+音频请求由主后端的网易云客户端直接向上游发起，没有独立服务，也没有回环端口：
 
 ```
 前端 <audio>
    │  /api/music/stream?songId=&level=&roomId=
    ▼
-主后端 /api/music/*     callNcmApi()（附加 timestamp 绕内部服务 apicache）
-   ▼
-内部 NCM 服务 127.0.0.1:36530~36535   （@neteasecloudmusicapienhanced/api）
+主后端 /api/music/*   internal/ncm（weapi / eapi 加密 + 45 条路由表）
    ▼
 网易云上游
 ```
 
-内嵌 NCM 服务由主进程启动（`ncm-api.service.ts`）：绑定 `127.0.0.1`（必须显式传 host，包内 fallback 会读 `process.env.PORT/HOST` 与主服务冲突），基准端口 **36530** 被占用时 +1 重试，最多 5 次；启动探测总限 15s。启动失败不阻塞主服务，此时 `/api/music/*` 返回 503 `NCM_UNAVAILABLE`。
-
-`callNcmApi()` 每次请求附加 `timestamp=Date.now()`：内部服务挂了 2 分钟 apicache，而缓存 key 不含 Cookie，不同登录态的相同 URL 会命中同一份缓存，匿名结果可能被 VIP 用户取到。
+`internal/ncm` 是自包含包：加密、路由表、二维码登录、歌单两段式、可播检查与云盘上传都在里面，不依赖网易云 SDK，也没有可配置的上游地址。拿不到数据只可能是网易云拒绝（风控 / 版权 / 地区），不是「内部服务没起来」。
 
 ## 路由与登录态（`/api/music/ncm/*`）
 
@@ -47,7 +43,7 @@ lossless → exhigh → higher → standard
 - **SSRF 防护**：解析出的直链域名必须匹配 `*.music.126.net`，否则拒绝转发。
 - **direct=1 模式**：用 302 把 CDN 直链交给 `<audio>` 直连，减少服务器带宽。直链缓存 **15 分钟**（签名有效期 20~30 分钟），key 含实际生效凭证的归属，VIP 直链只会发给同一凭证链的请求。`http:` 直链统一改写为 `https:`。
 - 代理流模式透传 Range（上游 206 必须转发），1MB 高水位读块，断连时 abort 上游并销毁流。
-- 错误码：403 `VIP_REQUIRED` / 404 `NO_COPYRIGHT`（`/check/music` 判定）/ 502 `RESOLVE_FAILED` / 503 `NCM_UNAVAILABLE`。
+- 错误码：403 `VIP_REQUIRED` / 404 `NO_COPYRIGHT`（`/check/music` 判定）/ 502 `RESOLVE_FAILED`。
 
 ## 房间内同步
 

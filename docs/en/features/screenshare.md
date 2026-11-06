@@ -10,7 +10,7 @@ ZViewer offers two screen sharing and streaming methods to meet different needs,
 | Audio support | Supported (optional) | Supported (controlled by OBS) |
 | Annotation tools | Built-in pen, color, thickness | Not available, must overlay in OBS |
 | Use case | Quick demos, ad-hoc meetings | Live streaming, recording, multi-scene switching |
-| Viewer count | Suitable for small scale (P2P/TURN) | Suitable for large scale (HTTP-FLV distribution) |
+| Viewer count | Suitable for most rooms (viewer relay, automatic upstream switching) | Suitable for large scale (HTTP-FLV distribution) |
 
 ---
 
@@ -33,16 +33,18 @@ No additional software required, done entirely within the browser. **Requires HT
    - **Entire Screen** -- Share all monitor displays.
    - **Application Window** -- Share only a specific program window.
    - **Browser Tab** -- Share only a specific tab (with audio option).
+   - **Camera** -- Share a connected camera instead of a screen.
 3. Click **"Share"** to start sharing.
 
-#### 3. Set Frame Rate and Bitrate (Optional)
+#### 3. Adjust Quality (Optional)
 
-Click the **"Quality"** button next to the share preview to adjust:
+The **"Share Settings"** card stays below the stage while you are sharing:
 
-- **Frame Rate**: Default 15 fps, options 10 / 15 / 30 fps (some bugs present)
-- **Bitrate**: Default 1000 kbps, can be adjusted via slider or manual input.
+- **Quality preset**: three tiers; higher tiers raise resolution and bandwidth.
+- **Frame rate**: 1–240, narrowed automatically by the chosen resolution.
+- **Audio**: system audio, microphone, or both mixed into one track.
 
-> Higher frame rate and bitrate improve quality but also increase network load. Choose based on your upstream bandwidth. (Current frame rate selection has some issues and may be limited to 15 fps.)
+> There is no bitrate cap: quality is decided by resolution and frame rate. If the encoder cannot keep up, the app drops one tier automatically.
 
 #### 4. Share Audio (Optional)
 
@@ -69,7 +71,8 @@ During sharing, click the **"Pen"** button to open the annotation toolbar:
 
 - **Picture-in-Picture (PiP)**: Click the **"PiP"** button to float the shared画面 in a corner of the window, making it easy to multitask.
 - **Fullscreen**: Click the **"Fullscreen"** button to enlarge the view.
-- **Mute**: Click the **"Mute"** toggle to control audio playback.
+- **Mute / volume**: Toggle mute or set the shared audio anywhere from 0% to 200%.
+- **Stats**: The stats panel lists the receiving quality of every viewer.
 - **Screenshot**: Click the **"Screenshot"** button to save the current画面 (browser downloads it automatically).
 
 > Viewers do not need to install any software. They can watch by opening the room link in a browser.
@@ -129,10 +132,10 @@ If you prefer not to use the configuration file, you can set it up manually:
 
 Viewers do not need to do anything extra -- they watch directly through the browser:
 
-- The viewer side automatically pulls and plays the stream via the HTTP-FLV protocol.
-- They can also directly access `http://server-ip:3335/live/stream-key.flv` in a browser or media player to watch.
+- The viewer side pulls and plays the stream over HTTP-FLV through the same origin.
+- No extra port: the backend serves `/live` in-process after checking the session ticket.
 
-> Streaming ports: **3334** (RTMP ingest) / **3335** (HTTP-FLV playback). Make sure your firewall allows traffic on these two ports.
+> Streaming port: **3334** (RTMP ingest). HTTP-FLV playback has no port of its own — make sure your reverse proxy passes `/live`.
 
 ---
 
@@ -144,15 +147,13 @@ The WebRTC `getUserMedia` API requires a secure context. HTTPS must be configure
 
 > You can use `localhost` in development, but a valid SSL certificate is required in production.
 
-### Nginx Reverse Proxy for HTTP-FLV
+### No Extra Port for Playback
 
-The HTTP-FLV port (3335) **should not be exposed** directly to the public internet. It should be reverse-proxied through Nginx under the `/live` path.
+HTTP-FLV does not use a separate port: the backend serves `/live` directly after checking the session ticket, so it inherits your HTTPS and reverse-proxy setup. Nothing to expose and nothing to proxy separately.
 
-Modify the Nginx configuration to proxy `http://server-ip:3335/live/` under the same origin, and set `VITE_FLV_BASE_URL` to an empty string to use the same-origin address.
+### NAT and Relay
 
-### NAT Traversal -- TURN Server
-
-In strict NAT environments, WebRTC P2P connections may fail. A TURN server (such as [coturn](https://github.com/coturn/coturn)) needs to be deployed for relay forwarding.
+Screen sharing is peer-to-peer by default with the host as the tree root. Viewers relay for each other and a slow edge switches to another upstream automatically; no separate TURN server to deploy. If nobody can load the stream, check that `/signal` is reachable through your reverse proxy.
 
 ### Example Nginx Configuration
 
@@ -174,16 +175,9 @@ server {
 
     # Main application
     location / {
-        proxy_pass http://127.0.0.1:3000;
+        proxy_pass http://127.0.0.1:3333;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-
-    # HTTP-FLV media stream (reverse proxy port 3335)
-    location /live/ {
-        proxy_pass http://127.0.0.1:3335/live/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
@@ -201,11 +195,11 @@ server {
 - **Check HTTPS**: ZViewer must be accessed over HTTPS (WebRTC requirement).
 - **Check browser permissions**: Make sure the browser has granted camera/screen sharing permissions.
 - **Check browser console**: Press F12 to open developer tools and check for errors.
-- **NAT environment**: A TURN server must be deployed in strict NAT environments, otherwise P2P connections may fail.
+- **NAT environment**: Viewers behind strict NAT are handled by the relay automatically; if nobody can load the stream, check that `/signal` is reachable.
 
 ### OBS streaming fails
 
-- **Check server status**: Confirm that the ZViewer backend and Node-Media-Server are running.
+- **Check server status**: Confirm that the ZViewer backend is running; the RTMP service is built into it.
 - **Check firewall**: Make sure port 3334 (RTMP) is not blocked by the firewall.
 - **Check stream key**: Confirm the stream key matches the one generated in the room, with no extra spaces.
 - **Check OBS logs**: OBS menu **"Help"** → **"Log Files"** → **"View Current Log"** to find error messages.
@@ -213,7 +207,7 @@ server {
 
 ###画面 stuttering or high latency
 
-- **Lower frame rate/bitrate**: In the share quality settings, reduce the frame rate to 15 fps and bitrate to 500-800 kbps.
+- **Lower the quality tier**: Pick a lower preset or a lower frame rate in the share settings card.
 - **Check upstream bandwidth**: Use a speed test tool to confirm upstream bandwidth is at least 1 Mbps.
 - **Switch network**: Prefer a wired connection over Wi-Fi.
 - **Close other bandwidth-intensive applications**: Such as online video streaming, large file downloads, etc.

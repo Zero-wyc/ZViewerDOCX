@@ -34,12 +34,10 @@ The voice chat panel (VoiceChatPanel) is permanently located at the **bottom-rig
 ### Host Enabling Voice
 1. Click the voice panel at the bottom-right corner
 2. Enable voice
-3. Set the bitrate: 32 / 96 / 128 / 192 kbps (default 128 kbps)
+3. Pick your microphone and set your own volume
 4. Once enabled, viewers can listen in
 
-> Voice uses **server relay mode** (rather than P2P) to address the issue of P2P being blocked in current NAT environments, which would otherwise prevent voice chat. In relay mode, audio streams are forwarded through the server, offering better compatibility without NAT type restrictions.
->
-> The playback pipeline includes an **adaptive jitter buffer** that adjusts buffering based on network jitter, reducing stutter and latency. The codec pipeline locks the sample rate with decoding fallback, making the first word after unmuting sound more natural.
+> Voice is **peer-to-peer**: the host is the root of the tree, viewers connect to the upstream the server assigns them, and audio does not pass through the server unless a direct path cannot be established. The browser picks UDP or TCP automatically.
 
 ### Member Identity and Display
 
@@ -51,7 +49,7 @@ The voice chat panel (VoiceChatPanel) is permanently located at the **bottom-rig
 
 The host or a moderator can manage voice members:
 
-- **Voice mute / unmute**: While muted, the server relay layer directly drops the member's audio packets (enforced server-side; the client cannot bypass it). The muted member can still listen.
+- **Voice mute / unmute**: While muted, the server mutes the member's published track and notifies their client, which locks the microphone (enforced server-side; the client cannot bypass it). The muted member can still listen.
 - **Voice kick**: Kicks a member out of the voice channel (cannot rejoin during a 60-second cooldown).
 
 ## 4. Moderator Role
@@ -92,4 +90,4 @@ The host may not be present. Wait a moment. If auto-approve is enabled, the requ
 In the **Viewer Management** panel, the host clicks the shield icon next to a target user to appoint or dismiss a moderator. Only the host can do this, and only logged-in users can be appointed.
 
 ### If I'm voice-muted, can I still hear others?
-Yes. Voice mute only stops you from speaking (the server relay layer drops your audio packets); listening is unaffected.
+Yes. Voice mute only stops you from speaking (the server mutes your published track); listening is unaffected.

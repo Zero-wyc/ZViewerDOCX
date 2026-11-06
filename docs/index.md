@@ -38,11 +38,11 @@ features:
     details: 支持 Bilibili 弹幕、DandanPlay 弹幕，自定义弹幕轨道，轨道叠加可实现弹幕翻倍。
   - icon: 🖥️
     title: 屏幕共享与推流
-    details: 基于 WebRTC 的屏幕共享，OBS RTMP 推流配合 Node Media Server 提供 HTTP-FLV 拉流。
+    details: 基于 WebRTC 的屏幕共享，观众互助转发并按质量自动换路；OBS RTMP 推流由内置媒体服务提供 HTTP-FLV 拉流。
   - icon: 🎨
     title: Material You 主题
-    details: 从壁纸提取色彩生成完整色板，明暗主题切换、自定义背景、玻璃拟态 UI。
+    details: 从壁纸提取色彩生成完整色板，明暗主题切换、自定义背景、玻璃拟态 UI，界面中英双语。
   - icon: 🚀
     title: 快速部署
-    details: 源码一键启动、单文件 exe、Docker 镜像、GitHub Actions 自动构建
+    details: 源码一键启动、Windows 桌面版、单文件 exe、Docker 镜像、GitHub Actions 自动构建
 ---

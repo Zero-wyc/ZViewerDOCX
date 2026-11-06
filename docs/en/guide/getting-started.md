@@ -30,23 +30,29 @@ The extracted directory structure is as follows:
 
 ```
 zviewer-windows-x64/
-├── zviewer-backend.exe     # Backend service (unified hosting of frontend pages)
-├── zviewer-cert.exe        # SSL certificate tool
+├── zviewer-backend.exe     # Backend service (pages, API, voice, sharing, RTMP)
 ├── start.bat               # Startup script (Windows)
 └── start.sh                # Startup script (Linux)
 ```
 
+There is also a Windows desktop build (`zviewer-windows-x64-GUI.zip`): run `ZViewerDesktop.exe` and the app hosts the backend plus the network entry points for you.
+
 ### Option 2: Source Code Version
 
-Suitable for users with Node.js development experience.
+Suitable for users with Go and Node.js development experience (Go 1.26+, Node.js 22+).
 
 ```bash
 # Clone the project
 git clone https://github.com/Zero-wyc/ZViewer.git
 cd ZViewer
 
-# Install dependencies
+# Install dependencies and create the database
 npm install
+npm run db:init
+
+# Development / production
+npm run dev
+npm run build && npm start
 ```
 
 ---
@@ -247,9 +253,10 @@ After adding the video, everything is ready!
 
 | Service | Port | Description |
 |---|---|---|
-| Backend Service (Unified Entry) | 3333 | HTTP / HTTPS API, WebSocket, frontend static files, SPA fallback |
-| RTMP Streaming | 3334 | OBS streaming port (separate port; RTMP is a TCP binary protocol and cannot be multiplexed with HTTP) |
-| HTTP-FLV Playback | 3335 | Live stream playback (Node Media Server, proxied through the backend `/live` endpoint) |
+| Backend Service (Unified Entry) | 3333 | HTTP / HTTPS API, WebSocket, `/signal` sharing and voice signaling, frontend static files, `/live` FLV playback |
+| Media (UDP) | 3333/udp | Built-in media plane, legacy voice path only |
+| Media (TCP) | 3337 | Same, over TCP |
+| RTMP Streaming | 3334 | OBS streaming port (RTMP is a TCP binary protocol and cannot be multiplexed with HTTP) |
 
 In HTTP mode, users access all features at `http://localhost:3333`.
 

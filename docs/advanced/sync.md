@@ -93,8 +93,8 @@ seek 统一走 `executeSeek`（`seek-service.ts`）：目标落在缓冲区内�
 
 ## 不走 Socket.IO 的实时能力
 
-- **语音聊天**：由独立 LiveKit 承载，主后端只签发凭证并执行禁言、踢出，见[语音聊天链路](/advanced/voice)。
-- **OBS 推流**：由 Node Media Server 处理，播放端走 HTTP-FLV，不占 Socket.IO 通道。
+- **语音聊天**：与屏幕共享共用 `/signal` 的一条信令与一棵客户端树，后端只签发凭证、决定树的边并校验禁言 / 踢人权限，见[语音聊天链路](/advanced/voice)。
+- **OBS 推流**：由进程内媒体服务处理，播放端走 HTTP-FLV，不占 Socket.IO 通道。
 
 ## 观众端只读化与资源清理
 
