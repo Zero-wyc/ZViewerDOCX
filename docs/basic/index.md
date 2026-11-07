@@ -50,7 +50,7 @@ ZViewer 是多人同步观影、追番与远程共享平台。日常安装与使
 | [手机端 App](/basic/mobile) | Android / HarmonyOS 客户端与平台差异 |
 | [ZViewer CLI](/basic/cli) | 本地代理客户端安装与使用 |
 | [管理后台](/basic/admin) | 用户审核、房间管理、系统设置 |
-| [网络连接与内网穿透](/basic/network) | FRP / EasyTier / IPv6 |
+| [网络连接与内网穿透](/basic/network) | FRP / Cloudflare 隧道 / EasyTier / IPv6 |
 | [常见问题](/basic/faq) | 证书、WebSocket、数据库等 |
 
 需要 HTTPS 时用一键脚本签发并启动：`start.bat https` / `./start.sh https`，机制见 [HTTPS 证书](/advanced/https)。新手用内网穿透自带的自动 HTTPS，或用自签证书即可——自签只会弹一次警告，不影响使用。
