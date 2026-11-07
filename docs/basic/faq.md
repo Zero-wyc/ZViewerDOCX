@@ -24,7 +24,9 @@ proxy_set_header Connection "upgrade";
 
 ## 数据库
 
-后端用 Go + SQLite（`config/dev.sqlite`），默认 WAL 模式，标准格式可用常规工具查看。启动只校验结构，不建表改表：空库用 `--init-db`，4.x 旧库用 `--upgrade-db`（先备份再补表补列）。备份用 `--backup-db`（`VACUUM INTO`），WAL 下不要直接复制主文件。
+后端用 Go + SQLite（`config/dev.sqlite`），默认 WAL 模式，标准格式可用常规工具查看；同目录的 `-wal` / `-shm` 旁文件属正常现象，别手删。只有 SQLite，不支持 PostgreSQL。
+
+启动只校验结构，不建表改表：空库用 `--init-db`，4.x 旧库用 `--upgrade-db`（先备份再补表补列）。备份用 `--backup-db`（`VACUUM INTO`），直接 `cp` 主文件会丢最近事务。
 
 ## Bilibili 解析失败
 
@@ -41,4 +43,4 @@ proxy_set_header Connection "upgrade";
 
 ## 更新机制
 
-支持从 GitHub Releases 或 GitCode 镜像检测并应用更新，也可手动上传压缩包。管理员可控制是否接收预发布版；用桌面版时网页端不再提供更新，改在启动台里做。详见[构建与更新](/advanced/build-update)。
+支持从 GitHub Releases 或 GitCode 镜像检测并应用更新，也可手动上传压缩包；默认走镜像，可在后台关掉改走 GitHub。管理员可控制是否接收预发布版；用桌面版时网页端不再提供更新，改在启动台里做。详见[构建与更新](/advanced/build-update)。

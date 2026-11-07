@@ -16,16 +16,28 @@
 
 桌面壳单独构建：`npm --prefix desktop run shell:build` / `shell:dist` / `package`。
 
+证书签发是后端的一个子命令（`zviewer-backend --gen-cert <host>`），不再单独出二进制；`start.bat` / `start.sh` 的菜单 7、8 就是调它。
+
 ## CI（GitHub Actions）
 
 | 触发 | 版本号 | 产物 |
 |---|---|---|
-| 手动触发，版本号留空 | `latest` 预发布 | 双平台包 + Windows GUI + Docker |
+| 手动触发，版本号留空 | `latest` 预发布 | 双平台包 + Windows GUI + Docker `dev` |
 | 手动触发，填 `vX.Y.Z` | 正式版，自动打 tag | Release + `ZviewerRelease` 产物仓库 + GitCode 镜像 |
 | push `v*` tag | 同上 | 同上 |
 
+正式版的发布链路：
+
+```
+prepare → build / build-gui → release（GitHub Release）
+                            → publish-branch（产物仓库 main：GitHub + GitCode）
+                            → sync-gitcode（代码与 tag → GitCode 主仓库）
+```
+
 - `latest` 只跟随版本号最高的正式版，旧分支补丁发版不会把镜像拽回去；跟随 `main` 的开发镜像用 `dev`。
-- 正式版产物发到独立的 `ZviewerRelease` 仓库，GitCode 是它的只读镜像。
+- **产物仓库** `ZviewerRelease`：三个包 + `latest.json` + `README.md`，每次发版用孤儿提交整体替换 `main`，旧包随旧提交消失；GitCode 是它的只读镜像。
+- **桌面组件**（cloudflared、EasyTier、frpc）不随包，放在 `ZviewerRelease` 的 `components` 分支，客户端首次用到时下载。
+- 补发历史产物不必重新构建：`Actions → Publish Release Repo` 填原 `run_id` + `tag` + `version`。
 
 ## 自动更新
 

@@ -7,17 +7,16 @@
 | 变量 | 说明 | 默认值 |
 |---|---|---|
 | `PORT` | 后端服务端口 | `3333` |
-| `HOST` | 监听地址 | 空（IPv4/IPv6 双栈） |
+| `HOST` | 监听地址 | 空（IPv4 / IPv6 双栈） |
 | `CONFIG_DIR` | 数据根目录 | `<project-root>/config` |
-| `DATABASE_URL` | SQLite 文件路径 | `<config>/dev.sqlite` |
+| `DATABASE_URL` | SQLite 文件路径（相对 `CONFIG_DIR`） | `<config>/dev.sqlite` |
+| `SQLITE_WAL` | 设 `0` 退回 `journal_mode=delete` | 启用 WAL |
 | `CORS_ORIGIN` | CORS 允许来源，逗号分隔 | `*` |
 | `TRUSTED_PROXY_CIDRS` | 信任的反代网段，用于按转发头推导地址 | 空 |
 | `JWT_ACCESS_SECRET` | Access Token 密钥（生产宜显式设置） | 自动生成并写入 `config/jwt-secrets.json` |
 | `JWT_REFRESH_SECRET` | Refresh Token 密钥（生产宜显式设置） | 同上 |
 | `JWT_ACCESS_EXPIRES_IN` | Access Token 有效期 | `24h` |
 | `JWT_REFRESH_EXPIRES_IN` | Refresh Token 有效期 | `30d`（guest 恒为 1h / 7d） |
-| `SQLITE_WAL` | 设为 `0` 退回 `journal_mode=delete` | WAL |
-
 **JWT 密钥自举**：未设环境变量时读 `config/jwt-secrets.json`，仍无则自动生成写回。生产环境固定密钥可避免重启后登录态失效。
 
 单文件版的配置写在 `config/` 下的环境文件；Docker 用 `-e` 或 compose `environment` 注入。
@@ -75,8 +74,15 @@
 | `VITE_FLV_BASE_URL` | OBS 推流模式 FLV 拉流地址 | `/live` |
 | `VITE_RTMP_PORT` | OBS 推流端口提示 | `3334` |
 
-开发模式下 Vite 会把 `/api`、`/socket.io`、`/signal`、`/live` 代理到后端，无需配置 `VITE_API_URL`。运行时可在顶栏「自定义后端地址」覆盖，值存于 localStorage。
+开发模式下 Vite 会把 `/api`、`/socket.io`、`/signal`、`/live` 代理到后端，无需配置 `VITE_API_URL`。运行时可在顶栏「自定义后端地址」覆盖，值存于 localStorage：`zviewer-custom-api-url`、`zviewer-custom-socket-url`、`zviewer-custom-flv-base-url`、`zviewer-custom-rtmp-port`。
+
+## 数据库
+
+只有 SQLite 一种：`config/dev.sqlite`，WAL 模式，纯 Go 驱动、无原生依赖。表结构由 `schema.sql` 定义，启动时只校验不建表——新机器必须先跑 `npm run db:init`，缺表会直接退出。
 
 ## 运行时可调项（管理后台）
 
-这些设置存库、经管理后台修改：注册模式、建房模式、权限矩阵、功能开关（`dashDisabled` / `playsvideoEnabled` / `betaFeaturesEnabled`）、无人房间自动清理（`autoDeleteInactiveRooms` + `autoDeleteAfterHours`，默认 24 小时）、更新源、房间界面悬浮入口、默认解析模式。通过 `/api/admin/settings` 修改，前端启动时经 `/api/auth/public-settings` 拉取。
+这些设置存库、经管理后台修改：注册模式、建房权限、权限矩阵、一起听默认音量、多页面登录（测试）、公告自动弹出、Beta 功能与规则源 / CMS 源、`dashDisabled` / `playsvideoEnabled`、B站默认解析参数、房间悬浮入口、无人房间自动清理（`autoDeleteInactiveRooms` + `autoDeleteAfterHours`，默认 24 小时）。通过 `/api/admin/settings` 修改，前端启动时经 `/api/auth/public-settings` 拉取。
+
+更新源开关（镜像 / GitHub）不进数据库，网页端写 `config/update-source.json`，桌面端写用户配置目录的 `settings.json`。
+

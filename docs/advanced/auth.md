@@ -4,7 +4,7 @@
 
 ## Token 体系
 
-两个 JWT 做身份认证，实现在 `middleware/auth.ts`。
+两个 JWT 做身份认证，实现在 `backend-go/internal/auth`。
 
 | Token | 默认有效期 | 环境变量 | 通道 |
 |---|---|---|---|
@@ -36,7 +36,7 @@
 - **用户名与密码**：用户名匹配 `/^[\u4e00-\u9fa5A-Za-z0-9_\- ]{2,24}$/`，密码至少 4 位。`approval` 模式下 pending 用户登录与 refresh 均返回 403「账号正在审核中」；root 审核通过后置为 active，原角色为 guest 则提升为 user。
 - **游客**：`POST /api/auth/guest` 无需鉴权，直接签发 `userId=0, role='guest'`，`/auth/me` 返回虚拟用户而不查库。游客 refresh 7d 短于正式用户 30d，在无凭证可吊销的场景下压低滥用面。
 - **默认密码检测**：登录响应带 `mustChangePassword`，由 bcrypt 比对 `'root'` 得出。
-- **限流**：登录每 IP 15 分钟 20 次；连续失败 5 次锁 15 分钟（`ENABLE_LOGIN_LOCK=true` 开启，默认关闭）；改密每用户 1 分钟 3 次。
+- **限流**：登录每 IP 15 分钟 20 次；改密每用户 1 分钟 3 次。
 
 ## 角色模型
 
